@@ -21,7 +21,7 @@ The selected dataset for this project is originally from the National 2009 H1N1 
 The flu is an illness that is caused by the influenza virus, which can lead to various symptoms that include, but are not limited to, high fevers and sore throats. The Swine Flu, in particular, is a novel influenza A (H1N1) virus that emerged in Spring 2009. The Swine Flu was initially detected in the United States, eventually spreading to the rest of the world. It is said to have "contained a blend of flu genes that hadn't been previously seen in animals or people." The Swine Flu, although very similar to the Seasonal Flu, was found to be more contagious, and less people were found to have existing resistance. (Reference 2)
 
 
-# Data Cleaning
+# Background
 Before building our machine learning algorithms, having a clear understanding of the data is critical. We must familiarize ourselves with the origin, size, key characteristics, behavior, and type of data. 
 
 The dataset is originally composed of 38 columns and 26,707 observations. Each observation accounts for one person who responded to the National 2009 H1N1 Flu Survey. There are five general groupings that each feature falls into. These data categories can be found below with a few examples of the types of variables that would belong to it: 
@@ -96,8 +96,9 @@ After removing the top 3 columns with the highest number of NA's and then removi
 ```{r}
 df[,] <- lapply(df[,], factor)  ## as.factor() could also be used
 #str(df)
+#write.csv(df,"cleaned_df.csv", row.names = TRUE) #saving to a new csv file
 ```
 
-References
+# References
 1. <ftp://ftp.cdc.gov/pub/Health_Statistics/NCHS/Dataset_Documentation/NIS/nhfs/nhfspuf_DUG.PDF>
 2. <https://www.cdc.gov/h1n1flu/surveillanceqa.htm>
