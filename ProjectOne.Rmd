@@ -1,0 +1,103 @@
+---
+title: "Project-One-Group-3"
+author: "Jasmine Dogu, Brian Wimmer, Christos Chen - Group 3"
+date: "01/04/2021"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: paper
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+set.seed(03092000)
+```
+
+# About the Dataset
+
+The selected dataset for this project is originally from the National 2009 H1N1 Flu Survey but can also be found on [Driven Data](https://www.drivendata.org/competitions/66/flu-shot-learning/page/210/). 
+
+The flu is an illness that is caused by the influenza virus, which can lead to various symptoms that include, but are not limited to, high fevers and sore throats. The Swine Flu, in particular, is a novel influenza A (H1N1) virus that emerged in Spring 2009. The Swine Flu was initially detected in the United States, eventually spreading to the rest of the world. It is said to have "contained a blend of flu genes that hadn't been previously seen in animals or people." The Swine Flu, although very similar to the Seasonal Flu, was found to be more contagious, and less people were found to have existing resistance. (Reference 2)
+
+
+# Data Cleaning
+Before building our machine learning algorithms, having a clear understanding of the data is critical. We must familiarize ourselves with the origin, size, key characteristics, behavior, and type of data. 
+
+The dataset is originally composed of 38 columns and 26,707 observations. Each observation accounts for one person who responded to the National 2009 H1N1 Flu Survey. There are five general groupings that each feature falls into. These data categories can be found below with a few examples of the types of variables that would belong to it: 
+
+1. Presumptions
+- h1n1_concern, h1n1_knowledge
+2. Behavioral: public health measure and avoidance strategies
+- behavioral_face_mask, behavioral_large_gatherings, behavioral_touch_face
+3. Opinion: respondent’s opinion regarding the vaccine
+- opinion_h1n1_risk, opinion_h1n1_sick_from_vacc
+4. Demographics
+- age_group, income_poverty, education, hhs_geo_region
+5. Health Considerations: doctor recommendations, conditions
+- doctor_recc_h1n1, chronic_med_condition, health_insurance
+
+According to the CDC, initially there were 734,367 landline numbers that were considered. After being narrowed down due to the unresponsiveness or the age of the respondent, a total of 105,499 respondents that were adults were found eligible. However, only 43.2% of these individuals completed the interview. It is fair to assume that there is a non-response bias in play with the survey. This is important to keep in mind as it can be a source of explanation as to why the data may be imbalanced. It is very likely that individuals who were pro-vaccination were more likely to want to answer the National 2009 H1N1 Flu Survey, therefore, skewing the results. (Reference 1)
+
+With responses from both the adults and the children, the CDC states that there are a total of 56,656 people who responded to the National 2009 H1N1 Flu Survey; these were composed of both landline and cellphone interviews. In our dataset, because we only have data for 26,707 respondents, it is safe to assume that the dataset is a sample of the original National 2009 H1N1 Flu Survey. (Reference 1)
+
+# Reading in the Dataset
+```{r, include=FALSE}
+df_features <- read.csv("training_set_features.csv")
+df_label <- read.csv("training_set_labels.csv")
+df <- merge(df_features,df_label,by="respondent_id")
+head(df)
+sum(nrow(df))
+```
+The original dataset was provided in two csv files. To begin our analysis, we must first combine the two into one dataframe. This is because one csv file has the features we are interested in while the other has the labels for our observations (whether the individual received the H1N1 and Seasonal Flu Vaccine or not). We matched up each of the rows by the respondent_id, which was a column in both the features and the label csv files. 
+
+# Removing the Seasonal Flu Columns
+```{r}
+df <- df[, -which(names(df) %in% c("doctor_recc_seasonal","opinion_seas_vacc_effective","opinion_seas_risk","opinion_seas_sick_from_vacc", "seasonal_vaccine"))]
+head(df)
+```
+Given the recent COVID-19 pandemic, our group chose to focus only on the vaccination for H1N1, which is also known as the Swine Flu. We believe that our findings will be interesting in regards to comparing it to COVID-19. Therefore, we removed the five columns that only dealt with the Seasonal Flu.  
+
+# Looking at the Structure of the Data: Type and NA's
+```{r}
+str(df)
+```
+Looking at the structure of the dataset, we notice a few things. Initially, we notice that there are a few empty strings in some of the variables, for example employment_occupation and empoloyment_industry, that we want to convert to NA's. This will make it easier for us when we are analyzing the number of missing datapoints we have in order to figure out what variables we may want to consider dropping. Additionally, we notice that for certain variables, specifically hhs_geo_region, employment_industry, and employment_occupation, these use a 10-region geographic classification defined by the U.S. Dept. of Health and Human Services. We will want to convert these to more meaningful groupings. Lastly, all of these variables must be converted to factors. This is because of the nature of the survey and types of variables we have present.  
+
+# Data Cleaning
+
+## Changing the Empty Strings
+```{r}
+df <- replace(df, df == "", NA)
+```
+Here, we replaced all rows with empty strings to contain the value "NA" instead. This will come in handy as we proceed with the analysis.
+
+## Looking at Na's and Removing Specific Columns
+```{r}
+colSums(is.na(df))
+```
+Looking at the number of NA's we have present in each column, we can see that the health_insurance, employment_industry, and employment_occupation make up the top 3 columns with the highest amount of NA's.
+
+We decided to remove the health_insurance column for a few reasons. It was the main source of NA's within the dataset (12,274), and deleting rows associated with this column would have effectively eliminated nearly half of the dataset. In addition, we did some further research into the financial obligations regarding the H1N1 vaccine. According to the Centers for Disease Control (CDC), the government wanted to avoid any economic obstacles for everyday Americans when it came to obtaining a vaccine. Vaccination providers, such as clinics or drugstores, were not allowed to charge volunteers for the vaccine, as the supplies had already been purchased by the US Government. This allowed us to conclude that health insurance, therefore, would not be as necessary or as big of an obstacle for obtaining the H1N1 vaccine, in comparison to others. Further information can be found [here](https://www.cdc.gov/h1n1flu/vaccination/statelocal/vaccine_financing.htm).
+
+```{r}
+df <- df[, -which(names(df) %in% c("employment_occupation","health_insurance","employment_industry"))]
+df<- na.omit(df)
+nrow(df)
+```
+After removing the top 3 columns with the highest number of NA's and then removing all of the rows with any NA values, we are left with 19,656 observations. Because this is still a significant portion of the original number of observations the dataset had (approximately 73.6%), we proceed with our analysis.
+
+## Converting the Geographic Region Variable
+```{r}
+
+```
+
+## Factoring the Variables
+```{r}
+df[,] <- lapply(df[,], factor)  ## as.factor() could also be used
+#str(df)
+```
+
+References
+1. <ftp://ftp.cdc.gov/pub/Health_Statistics/NCHS/Dataset_Documentation/NIS/nhfs/nhfspuf_DUG.PDF>
+2. <https://www.cdc.gov/h1n1flu/surveillanceqa.htm>
