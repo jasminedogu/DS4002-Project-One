@@ -3,9 +3,11 @@ title: "Project-One-Group-3"
 author: "Jasmine Dogu, Brian Wimmer, Christos Chen - Group 3"
 date: "01/04/2021"
 output:
+  pdf_document:
+    toc: yes
   html_document:
-    toc: true
-    toc_float: true
+    toc: yes
+    toc_float: yes
     theme: paper
 ---
 
@@ -16,6 +18,8 @@ library(ggplot2)
 library(plyr)
 library(mlbench)
 library(GGally)
+library(mltools)
+library(data.table)
 library(caret)
 set.seed(03092000)
 ```
@@ -35,13 +39,13 @@ We will first begin by explaining some background information on the H1N1 virus,
 # Why a Focus on F1 Score  
 ![Reference 3](f1.png)
 
-Throughout our project, we will be looking at multiple metrics to evaluate the performance of the SVM and Random Forest models. These include accuracy, precision (specificity), and recall (sensitivity). While all of these metrics will play a role in how we tune the models' parameter and determine which model is more successful, to answer our question of which model outperforms the other we will be looking at the F1 value. 
+Throughout our project, we will be looking at multiple metrics to evaluate the performance of the SVM and Random Forest models. These include **accuracy, precision (specificity), and recall (sensitivity)**. While all of these metrics will play a role in how we tune the models' parameter and determine which model is more successful, to answer our question of which model outperforms the other we will be looking at the **F1 value**. 
 
-The F1 value is the harmonic mean of the sensitivity and specificity rates, and it gives a better measure of the incorrectly classified cases than the accuracy metric would. It is scaled from 0 to 1, with 1 being the best. Because there is an imbalanced class distribution in our dataset, we will be analyzing the F1 score as it is a better indicator of which model is performing better. After getting the F1 scores for both the SVM and the Random Forest models, we will be utilizing a t-test to determine if the difference between the F1 scores of the models is due to chance or is statistically significant. This will determine whether a model outperforms the other.
+**The F1 value is the harmonic mean of the sensitivity and specificity rates**, and it gives a better measure of the incorrectly classified cases than the accuracy metric would. It is scaled from 0 to 1, with 1 being the best. Because there is an imbalanced class distribution in our dataset, we will be analyzing the F1 score as it is a better indicator of which model is performing better. After getting the F1 scores for both the SVM and the Random Forest models, we will be utilizing a t-test to determine if the difference between the F1 scores of the models is due to chance or is statistically significant. This will determine whether a model outperforms the other.
 
 An explanation of why the SVM and Random Forest models were specifically selected for this project will be explained later after some data cleaning. 
 
-# Background on H1N1. 
+# Background on H1N1
 The flu is an illness that is caused by the influenza virus, which can lead to various symptoms that include, but are not limited to, high fevers and sore throats. The Swine Flu, in particular, is a novel influenza A (H1N1) virus that emerged in Spring 2009. It is a subtype of the Influenza A Virus and is considered an **orthomyxovirus** that contains the glycoproteins **haemagglutinin** and **neuraminidase**. The Swine Flu was initially detected in the United States, eventually spreading to the rest of the world. It is said to have "contained a blend of flu genes that hadn't been previously seen in animals or people." The Swine Flu, although very similar to the Seasonal Flu, was found to be more contagious, and less people were found to have existing resistance. (Reference 2)
 
 
@@ -118,10 +122,12 @@ Lastly, we removed the respondent_id at this step. This variable was important w
 df <- df[, -which(names(df) %in% c("employment_occupation","health_insurance","employment_industry", "hhs_geo_region", "respondent_id"))]
 df<- na.omit(df)
 #write.csv(df,"df2.csv", row.names = TRUE) #saving to a new csv file
-df2<- read.csv("df2.csv")
+df2<- read.csv("df2.csv")  
 nrow(df)
 ```
 Here, along with removing the top 3 columns with the highest number of NA's, we also removed the hhs_geo_region variable for reasons mentioned above. We are left with 19,656 observations. Because this is still a significant portion of the original number of observations the dataset had (approximately 73.6%), we proceed with our analysis.
+
+In this step of our project, we decided to save the current dataframe to a new csv file. This is because in the next step we will be coercing all of the features to factors; therefore, it is a good idea to keep a copy of the clean data that contains all of the features' data types as they originally were.
 
 ## Coercing the Variables to Factors
 ```{r}
@@ -144,19 +150,11 @@ In theory, the Random Forest model would have a few benefits over the SVM model.
 
 However, the SVM model also has a few general benefits over the Random Forest model. Usually, the SVM model is known to be highly efficient and accurate. Similarly, the SVM model scales well to high dimensional data, which is not significantly relevant for our dataset as we have more observations than we do features. However, the main reason why we predict that the SVM model will outperform the Random Forest model is because of the kernels that the SVM model uses. With an appropriate kernel and degree of the kernel, we can expect the algorithm to work extremely well even if the data is not linearly separable in the base feature space, which in this instance applies to our dataset.
 
-In order to begin building our model, we now proceed to the feature selection, followed by the EDA. These are two sections that will help us gain a better understanding of the dataset and re-adjust our hypotheses, if needed. 
-
-# Feature Selection {.tabset}
-
-## Corellogram 
-```{r, message = FALSE, warnings = FALSE, fig.show='hide'}
-df2<- read.csv("cleaned_df.csv")
-h1n1_correlation = ggcorr(df2, method = c("everything", "pearson"), title = "H1N1 Factors Correlogram")
-h1n1_correlation
-```
-A correlogram was utilized to inform and guide future efforts for feature selection. We aimed to identify variables weakly correlated to the target variable and then test model performance with & without those variables. As demonstrated above, none of the variables are particularly strongly correlated with whether someone relieved the h1n1 vaccination. However, the most correlated are doctor recommendation, opinion about the risk of getting sick with the flu vaccine, and their opinion of whether or not the h1n1 vaccine was effective with correlations of 0.13, 0.11, and 0.09 respectively.
+In order to begin building our model, we now proceed to the EDA, followed by the feature selection. These are two sections that will help us gain a better understanding of the dataset and re-adjust our hypotheses, if needed. 
 
 # EDA {.tabset}
+
+In order to continue with the project, we first wanted to explore the data and to try to get an idea of the types of people within the dataset that may choose to get the vaccine. For this, we decided to create histograms depicting different features from each of the categories we had: presumptions, behavioral, opinion, demographic, and health considerations.
 
 ## Histogram for "Presumptions" Variables
 ```{r}
@@ -166,10 +164,11 @@ pre_1
 ```
 
 Over 70 percent of respondents presented a moderate level of concern regarding H1N1. 11.5% and 16.2% indicated "not at all concerned" and "very concerned", respectively. We would expect those that indicated "very concerned" to be the most likely to get the H1N1 vaccine.
-0-Not at all concerned
-1-Not very concerned
-2-Somewhat concerned
-3-Very concerned
+
+0-Not at all concerned  
+1-Not very concerned  
+2-Somewhat concerned  
+3-Very concerned  
 
 ```{r}
 pre_2 <- ggplot(df2, aes(x=h1n1_knowledge)) + 
@@ -178,9 +177,10 @@ pre_2
 ```
 
 The histogram shows there to be a suprisingly large proportion of respondents that indicated "A lot of knowledge" of the H1N1 Virus, with 37%. Only 7% indicated "No knowledge". We would expect the majority of those that reported having "A lot of knowledge" to want the vaccine, when compared to those reporting "No knowledge".
-0-No knowledge
-1-A little knowledge
-2-A lot of knowledge
+
+0-No knowledge  
+1-A little knowledge  
+2-A lot of knowledge  
 
 ## Histogram for "Behavioral" Variables
 ```{r}
@@ -190,8 +190,9 @@ beh1
 ```
 
 17% of respondents indicated infrequent hand washing and lack of sanitizer use, while 83% indicated the opposite. We would expect those that reported frequent usage to be more likely to get the H1N1 vaccine, as this indicates more self-awareness of healthy habits and the presence of germs.
-0-No
-1-Yes
+
+0-No  
+1-Yes  
 
 ```{r}
 beh2 <- ggplot(df2, aes(x=behavioral_large_gatherings)) + 
@@ -200,8 +201,9 @@ beh2
 ```
 
 65% of respondents indicated NOT avoiding large gatherings during the H1N1 crisis, while 35% indicated the opposite. We would expect those that indicated that they practiced avoidance measures to be more likely to get the H1N1 vaccine, as they would seem to be more worried of the risks of the virus.
-0-No
-1-Yes
+
+0-No  
+1-Yes  
 
 ## Histogram for "Opinion" Variables
 ```{r}
@@ -210,12 +212,13 @@ opi1 <- ggplot(df2, aes(x=opinion_h1n1_risk)) +
 opi1
 ```
 
-There is a relatively large disparity between opinions regarding H1N1 risk. Nearly 70% of respondents indicated the risk to be "Very Low" or "Somewhat Low", while only 28.2% indicated the risk posed by H1N1 to be "Somewhat High" or "Very High".
-1-Very Low
-2-Somewhat Low
-3-Don't Know
-4-Somewhat High
-5-Very High
+There is a relatively large disparity between opinions regarding H1N1 risk. Nearly 70% of respondents indicated the risk to be "Very Low" or "Somewhat Low", while only 28.2% indicated the risk posed by H1N1 to be "Somewhat High" or "Very High".  
+
+1-Very Low  
+2-Somewhat Low  
+3-Don't Know  
+4-Somewhat High  
+5-Very High  
 
 ```{r}
 opi2 <- ggplot(df2, aes(x=opinion_h1n1_sick_from_vacc)) + 
@@ -224,11 +227,12 @@ opi2
 ```
 
 There is a relatively large disparity between opinions regarding getting sick from the H1N1 vaccince. 69.5% of respondents indicated the risk of sickness to be "Not at all worried" or "Somewhat Worried", while only 30.2% indicated the risk of sickness to be "Somewhat Worried" or "Very Worried".
-1-Not at all worried
-2-Not very worried
-3-Don't know
-4-Somewhat worried
-5-Very worried
+
+1-Not at all worried  
+2-Not very worried    
+3-Don't know  
+4-Somewhat worried  
+5-Very worried  
 
 ## Histogram for "Demographics" Variables
 ```{r}
@@ -245,6 +249,7 @@ dem2 <- ggplot(df2, aes(x=education)) +
   geom_histogram(stat="count",fill="#8C74AE",color="black")+xlab("Level of Education")
 dem2
 ```
+
 The majority of respondents indicated having at least some college. The most represented group were College Graduates.
 
 
@@ -253,6 +258,7 @@ dem3 <- ggplot(df2, aes(x=employment_status)) +
   geom_histogram(stat="count",fill="#8C74AE",color="black")+xlab("Employment Status")
 dem3
 ```
+
 Over 50% of respondents indicated that they were employed.
 
 
@@ -262,18 +268,123 @@ hc1 <- ggplot(df2, aes(x=doctor_recc_h1n1)) +
   geom_histogram(stat="count",bins=2,fill="#B77AB0",color="black")+xlab("Doctor Recommendation of H1N1 Vaccine") + geom_text(aes( label = scales::percent(..prop..),y= ..prop.. ), stat= "count", vjust = -.5)
 hc1
 ```
+
 77% of respondents indicated that their doctor did NOT recommend getting the H1N1 Vaccine, while only 23% indicated the presence of a recommendation.
-0-No
-1-Yes
+
+0-No  
+1-Yes  
 
 ```{r}
 hc2 <- ggplot(df2, aes(x=chronic_med_condition)) + 
   geom_histogram(stat="count",bins=2,fill="#B77AB0",color="black")+xlab("Chronic Medical Condition") + geom_text(aes( label = scales::percent(..prop..),y= ..prop.. ), stat= "count", vjust = -.5)
 hc2
 ```
+
 72% or respondents indicated NOT having a chronic medical condition, while 28% indicated the presence of a chronic medical condition.
-0-No
-1-Yes
+0-No  
+1-Yes  
+
+# Feature Selection {.tabset}
+
+## Corellogram 
+```{r, message = FALSE, warnings = FALSE}
+h1n1_correlation = ggcorr(df2, method = c("everything", "pearson"), title = "H1N1 Factors Correlogram")
+h1n1_correlation
+```
+
+A correlogram was utilized to inform and guide future efforts for feature selection. We aimed to identify variables weakly and strongly correlated to the target variable and then test model performance with & without those variables. As demonstrated above, none of the variables are particularly strongly correlated with whether someone relieved the h1n1 vaccination. However, the most correlated are **doctor recommendation**, **opinion about the risk of getting sick with the flu vaccine**, and their **opinion of whether or not the h1n1 vaccine was effective** with correlations of **0.13**, **0.11**, and **0.09** respectively.
+
+Because we determined that no variables were highly correlated, we will not have to remove any of the features and can move on to the LASSO Regression.
+
+## LASSO Regression Model 
+
+### Why LASSO Regression
+
+Initially, we want to utilize lasso regression to reduce the feature space. LASSO regression is an analysis method that utilizes both variable selection and regularization to further enhance the predictive accuracy and interpretability. It imposes a constraint on the model parameters that causes the regression coefficients for some of the variables to shrink towards zero.
+
+### Preparing the Data
+```{r}
+set.seed(03092000)
+library(mltools)
+library(data.table)
+
+# Split the data into training and test set
+training.samples <- df$h1n1_vaccine %>% 
+  createDataPartition(p = 0.8, list = FALSE)
+train.data  <- df[training.samples, ]
+test.data <- df[-training.samples, ]
+
+#newdata <- one_hot(as.data.table(df))
+
+# Dummy code categorical predictor variables
+x <- model.matrix(h1n1_vaccine~., train.data)[,]
+# Convert the outcome (class) to a numerical variable
+y <- ifelse(train.data$h1n1_vaccine == 1, 1, 0)
+```
+
+### Computing Penalized Logistic Regression
+```{r}
+set.seed(03092000)
+library(glmnet)
+
+
+#Computing the Penalized Logistic Regression
+LASSO_Reg <-glmnet(x, y, family = "binomial", alpha = 1) 
+
+# Fit the final model on the training data
+model <- glmnet(x, y, alpha = 1, family = "binomial",
+                lambda =  LASSO_Reg$lambda.min)
+
+# Make predictions on the test data
+x.test <- model.matrix(h1n1_vaccine ~., test.data)[,]
+probabilities <- model %>% predict(newx = x.test)
+predicted.classes <- ifelse(probabilities > 0.5, "pos", "neg")
+
+# Model accuracy
+observed.classes <- test.data$h1n1_vaccine
+mean(predicted.classes == observed.classes)
+
+coef(LASSO_Reg)  #display regression coefficients
+
+plot(LASSO_Reg) #each lines a feature, the ones retained are the ones on the top 
+```
+
+
+```{r}
+
+#getting the actual coefficient for lambda 
+coeffs <- coef(LASSO_Reg, s = 0.1) 
+coeffs.df <- data.frame(name = coeffs@Dimnames[[1]][coeffs@i + 1], coefficient = coeffs@x) 
+
+# reordering the variables in term of coefficients
+coeffs.df[order(coeffs.df$coefficient, decreasing = T),]
+
+#cross-validation done by cv.glmnet
+cv.fit <- cv.glmnet(x, y)
+cv.fit
+
+plot(cv.fit)
+#1SE furthest to the right for lambda 
+cv.fit$lambda.min
+
+optimal_reg <-glmnet(x, y, family = "binomial", alpha = 0.0004245409) 
+plot(optimal_reg) #look back at the coefficients 
+
+coef(optimal_reg)
+
+```
+
+
+```{r}
+coef(LASSO_Reg, LASSO_Reg$lambda.min)
+
+```
+
+# Future Direction for Project
+
+Utilizing both the polynomial kernel and the radial kernel, we will explore tuning the hyperparameters and comparing the performance of each as they both possessed similar RMSE values. We initially ran multiple kernels and selected the Polynomial Kernel due to its low RMSE of 0.401, with the Radial Kernel following close behind at an RSME of 0.417. However, because these kernel’s performed very similarly with regard to our loss function, we would still like to further assess both kernels.
+
+Following the execution of the SVM, we would like to proceed with the Random Forest and aim to tune the hyperparameters for optimal performance. Having tuned both of the models, the statistical significance of the resulting F1 Scores of each algorithm will be assessed for statistical significance with a t-test.
 
 
 # SVM Model {.tabset}
