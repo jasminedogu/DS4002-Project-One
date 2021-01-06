@@ -327,11 +327,10 @@ y <- ifelse(train.data$h1n1_vaccine == 1, 1, 0)
 set.seed(03092000)
 library(glmnet)
 
-
 #Computing the Penalized Logistic Regression
 LASSO_Reg <-glmnet(x, y, family = "binomial", alpha = 1) 
 
-# Fit the final model on the training data
+#Fit the final model on the training data
 model <- glmnet(x, y, alpha = 1, family = "binomial",
                 lambda =  LASSO_Reg$lambda.min)
 
@@ -340,18 +339,12 @@ x.test <- model.matrix(h1n1_vaccine ~., test.data)[,]
 probabilities <- model %>% predict(newx = x.test)
 predicted.classes <- ifelse(probabilities > 0.5, "pos", "neg")
 
-# Model accuracy
-observed.classes <- test.data$h1n1_vaccine
-mean(predicted.classes == observed.classes)
-
 coef(LASSO_Reg)  #display regression coefficients
-
 plot(LASSO_Reg) #each lines a feature, the ones retained are the ones on the top 
 ```
 
 
 ```{r}
-
 #getting the actual coefficient for lambda 
 coeffs <- coef(LASSO_Reg, s = 0.1) 
 coeffs.df <- data.frame(name = coeffs@Dimnames[[1]][coeffs@i + 1], coefficient = coeffs@x) 
@@ -364,21 +357,43 @@ cv.fit <- cv.glmnet(x, y)
 cv.fit
 
 plot(cv.fit)
+
 #1SE furthest to the right for lambda 
 cv.fit$lambda.min
 
-optimal_reg <-glmnet(x, y, family = "binomial", alpha = 0.0004245409) 
+#Optimized run of the model 
+optimal_reg <-glmnet(x, y, family = "binomial", alpha = 0.006919) 
 plot(optimal_reg) #look back at the coefficients 
-
 coef(optimal_reg)
-
 ```
 
 
 ```{r}
-coef(LASSO_Reg, LASSO_Reg$lambda.min)
+# create a function to transform coefficient of glmnet and cvglmnet to data.frame
+coeff2dt <- function(fitobject, s) {
+  coeffs <- coef(fitobject, s) 
+  coeffs.dt <- data.frame(name = coeffs@Dimnames[[1]][coeffs@i + 1], coefficient = coeffs@x) 
 
+  # reorder the variables in term of coefficients
+  return(coeffs.dt[order(coeffs.dt$coefficient, decreasing = T),])
+}
+
+coeff2dt(fitobject = cv.fit, s = "lambda.min") %>% head(20)
+
+#threshold - block method (prop.) 
 ```
+
+# Creating a Lasso Coefficient Plot
+```{r}
+coeffs.table <- coeff2dt(fitobject = cv.fit, s = "lambda.min")
+ggplot(data = coeffs.table) +
+  geom_col(aes(x = name, y = coefficient, fill = {coefficient > 0})) +
+  xlab(label = "") +
+  ggtitle(expression(paste("Lasso Coefficients with ", lambda, " = 0.006919"))) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "none") 
+```
+
 
 # Future Direction for Project
 
