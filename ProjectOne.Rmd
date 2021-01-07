@@ -415,20 +415,24 @@ varOfInterestFinal
 ```
 As can be seen above, there are 17 variables that we plan to utilize within our SVM model. This significant reduction of the feature space promotes sparsity and makes the model *"mean and lean"* as described by Professor Wright.
 
+```{r}
+df_all_levels <- df[, which(names(df) %in% c("opinion_h1n1_risk","health_worker","opinion_h1n1_vacc_effective","age_group","education","h1n1_concern","opinion_h1n1_sick_from_vacc","doctor_rec_h1n1","child_under_6_months","race"))]
+```
+
 #One-Hot Encoding 
 ```{r}
 library(mltools)
 library(Matrix)
 #df_onehot = one_hot(df, dropCols = TRUE) FLOP!
 
-df_onehot = as.data.frame(as.matrix(sparse.model.matrix(~. -1, data = df)))
+df_onehot = as.data.frame(as.matrix(sparse.model.matrix(~. -1, data = df_all_levels)))
+names(df_onehot)[18] <- "h1n1_vaccine"
+
 
 ```
 
 
 ```{r}
-df_onehot = df_onehot %>% 
-  select( c(varOfInterestFinal, h1n1_vaccine1))
 
 names(df_onehot)[18] <- "h1n1_vaccine"
 
@@ -453,22 +457,22 @@ data_train <- sample(1:nrow(df),
                round(0.7 * nrow(df), 0), 
                replace = FALSE)
 
-data_val <- sample(1:nrow(df),
-               round(0.15 * nrow(df), 0), 
+data_test <- sample(1:nrow(df),
+               round(0.30 * nrow(df), 0), 
                replace = FALSE)
 
-data_test <- sample(1:nrow(df),
-               round(0.15 * nrow(df), 0), 
-               replace = FALSE)
+#data_val <- sample(1:nrow(df),
+#              round(0.15 * nrow(df), 0), 
+#              replace = FALSE)
 
 #Assigning random selection to original df
 original_train <- combined_df[data_train, 1:28] #Should contain 70% of data points
-original_val <- combined_df[data_val, 1:28]
+#original_val <- combined_df[data_val, 1:28]
 original_test <- combined_df[data_test, 1:28 ]
 
 #Assigning random selection to one hot encoded df 
 onehot_train <- combined_df[data_train, 29:46] #Should contain 70% of data points
-onehot_val <- combined_df[data_val, 29:46]
+#onehot_val <- combined_df[data_val, 29:46]
 onehot_val <- combined_df[data_test, 29:46]
 
 ```
