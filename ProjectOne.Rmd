@@ -621,6 +621,7 @@ classifier_original_tuned <- svm(formula = h1n1_vaccine ~ .,
 
 ```
 
+
 ## Predicting the Test Set Results with Model
 ```{r}
 # Predicting the test set results 
