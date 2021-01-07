@@ -424,7 +424,7 @@ library(Matrix)
 df_onehot = as.data.frame(as.matrix(sparse.model.matrix(~. -1, data = df)))
 
 ```
-Using the mltools package, 
+
 
 ```{r}
 df_onehot = df_onehot %>% 
@@ -442,6 +442,7 @@ names(df_onehot)[18] <- "h1n1_vaccine"
 Utilizing both the polynomial kernel and the radial kernel, we will explore tuning the hyperparameters and comparing the performance of each as they both possessed similar RMSE values. We initially ran multiple kernels and selected the Polynomial Kernel due to its low RMSE of 0.401, with the Radial Kernel following close behind at an RSME of 0.417. However, because these kernel’s performed very similarly with regard to our loss function, we would still like to further assess both kernels.
 
 Following the execution of the SVM, we would like to proceed with the Random Forest and aim to tune the hyperparameters for optimal performance. Having tuned both of the models, the statistical significance of the resulting F1 Scores of each algorithm will be assessed for statistical significance with a t-test.
+
 
 # Creating the Training, Testing, and Validation Sets
 ```{r}
@@ -476,43 +477,14 @@ We chose a 70/15/15 split for our analysis, due to a variety of beneficial facto
 
 # SVM Model {.tabset}
 
-## Splitting Data into Training and Testing Set
-```{r}
-# Splitting the dataset into the Training set and Test set 
-#install.packages('caTools') 
-set.seed(03092000)
-library(caTools) 
-  
-# Creating a 70/30 split
-splitting_data <- sample(1:nrow(df),
-               round(0.7 * nrow(df), 0), 
-               replace = FALSE)
 
-splitting_data_test <- sample(1:nrow(df),
-               round(0.15 * nrow(df), 0), 
-               replace = FALSE)
-
-#Creating the train and test data
-svm_train <- df[splitting_data, ] #Should contain 70% of data points
-svm_test <- df[splitting_data_test, ] #Should contain 15% of data points
-
-#Checking to ensure steps above were done correctly
-size_of_training <- nrow(svm_train)
-size_of_total <- nrow(df)
-size_of_test <- nrow(svm_test)
-
-#Verification
-paste("The Training Set contains", toString(round(size_of_training/size_of_total,2)*100), "% of the total data")
-paste("The Testing Set contains", toString(round(size_of_test/size_of_total,2)*100), "% of the total data")
-```
-
-## Creating the Model
+## Creating the First Model - Polynomial Kernel 
 ```{r}
 #install.packages('e1071') 
 library(e1071) 
 
-classifier <- svm(formula = h1n1_vaccine ~ ., 
-                 data = svm_train, 
+classifier_original <- svm(formula = h1n1_vaccine ~ ., 
+                 data = original_train, 
                  type = 'C-classification',  #Default
                  #can change degree 
                  kernel = 'polynomial')  #The kernel used in training and predicting
@@ -521,8 +493,8 @@ classifier <- svm(formula = h1n1_vaccine ~ .,
 ## Predicting the Test Set Results with Model
 ```{r}
 # Predicting the test set results 
-head(df)
-y_pred <- predict(classifier, newdata = svm_test[-28]) 
+
+y_pred_original <- predict(classifier_original, newdata = original_test[-28]) 
 ```
 
 ## Creating Confusion Matrix
@@ -530,13 +502,153 @@ y_pred <- predict(classifier, newdata = svm_test[-28])
 # Making a Confusion Matrix 
 #install.packages("caret")
 library(caret)
-cm <- confusionMatrix(svm_test$h1n1_vaccine,y_pred, positive = "1")
+cm <- confusionMatrix(original_test$h1n1_vaccine,y_pred_original, positive = "1")
+cm
+```
+The accuracy and sensitivity were good relative to the basis, at 0.7785 and 0.78205 respectively.
+
+```{r}
+f1score_poly = 2*0.78205 *(61/(636+13))/(0.78205  + (61/(636+61)) )
+f1score_poly
+```
+Our primary metric, the F1 Score, was calculated to be 0.169 - this is awful. Let's try it with the radial kernel. 
+
+
+
+## Creating the Second Model - Radial Kernel 
+```{r}
+#install.packages('e1071') 
+library(e1071) 
+
+classifier_original2 <- svm(formula = h1n1_vaccine ~ ., 
+                 data = original_train, 
+                 type = 'C-classification',  #Default
+                 #can change degree 
+                 kernel = 'radial')  #The kernel used in training and predicting
+
+```
+## Predicting the Test Set Results with Model
+```{r}
+# Predicting the test set results 
+
+y_pred_original2 <- predict(classifier_original2, newdata = original_test[-28]) 
+```
+
+## Creating Confusion Matrix
+```{r}
+# Making a Confusion Matrix 
+#install.packages("caret")
+library(caret)
+cm <- confusionMatrix(original_test$h1n1_vaccine,y_pred_original2, positive = "1")
+cm
+```
+The overall accuracy improved some to 0.82, while the false positive rate decreased from 0.2216 to 0.1546. 
+```{r}
+f1score_radial = 2*0.7303*(306/(391+306))/(0.7303 + (306/(391+306)) )
+f1score_radial
+```
+However, our main metric, the *F1 Score*, is *0.5483*. This is a significant improvement from the the polynomial kernel!
+Let's try with the reduced features!
+
+# SVM Model w/ Feature Reduction
+
+
+## Creating the Model
+```{r}
+#install.packages('e1071') 
+library(e1071) 
+set.seed(03092000)
+
+classifier_onehot <- svm(formula = h1n1_vaccine ~ ., 
+                 data = onehot_train, 
+                 type = 'C-classification',  #Default
+                 #can change degree 
+                 kernel = 'radial')  #The kernel used in training and predicting
+
+```
+## Predicting the Test Set Results with Model
+```{r}
+# Predicting the test set results 
+#head(df)
+y_pred_onehot <- predict(classifier_onehot, newdata = onehot_test[-18]) 
+```
+
+## Creating Confusion Matrix
+```{r}
+# Making a Confusion Matrix 
+#install.packages("caret")
+library(caret)
+cm <- confusionMatrix(svm_test$h1n1_vaccine,y_pred_onehot, positive = "1")
+cm
+```
+
+Notably there are improvements in accuracy and sensitivity. The accuracy improved slightly from 0.74 to 0.78 while the sensitivity improved significantly from 0.19 to 0.91. The balanced accuracy improved significantly from 0.48 to 0.85.
+
+```{r}
+f1score_radial_onehot = 2*0.22293*(105/(576+105))/(0.22293 + (105/(571+105)) )
+f1score_radial_onehot
+
+```
+With regard to our key metric, the F1 Score improved from 0.1817 , which is still awful. Now, we will set to tuning the hyperparameters, using the data that did not have a reduced feature space. 
+
+
+
+```{r}
+library(e1071)
+obj <- tune(svm, h1n1_vaccine~., data = original_test, 
+            ranges = list(gamma = 2^(-1:1), 
+                          cost = 2^(2:4)),
+            tunecontrol = tune.control(sampling = "fix"))
+summary(obj)
+
+```
+
+```{r}
+plot(obj)
+```
+
+## Running the Tuned SVM - Radial Kernel  
+```{r}
+#install.packages('e1071') 
+library(e1071) 
+
+classifier_original_tuned <- svm(formula = h1n1_vaccine ~ ., 
+                 data = original_train, 
+                 type = 'C-classification',  #Default
+                 #can change degree 
+                 kernel = 'radial',
+                 cost = 4,
+                 gamma = 0.5)  #The kernel used in training and predicting
+
+```
+## Predicting the Test Set Results with Model
+```{r}
+# Predicting the test set results 
+
+y_pred_original_tuned <- predict(classifier_original_tuned, newdata = original_test[-28]) 
+```
+
+## Creating Confusion Matrix
+```{r}
+# Making a Confusion Matrix 
+#install.packages("caret")
+library(caret)
+cm <- confusionMatrix(original_test$h1n1_vaccine,y_pred_original_tuned, positive = "1")
 cm
 ```
 
 
+```{r}
+f1score_radial_onehot = 2*0.9374 *(158/(539+158))/(0.9374  + (158/(158+539)) )
+f1score_radial_onehot
+
+```
+
+
+
 # Random Forest Model {.tabset}
 
+<<<<<<< HEAD
 ## Original Dataset Mtry
 ```{r}
 mytry_tune <- function(x){
@@ -547,6 +659,70 @@ mytry_tune <- function(x){
 mytry_tune(original_train)
 ```
 Mtry represents the number of variables randomly samples as candidates at each split. Using the mtry_tune function, we find that we should run our initial RF model using mtry = 5.196152, meaning that at each split, five variables will be randomly sampled as candidates at each split.
+=======
+## Splitting the Training, Validating, and Testing Sets
+```{r}Show in New WindowClear OutputExpand/Collapse Output
+Confusion Matrix and Statistics
+
+          Reference
+Prediction    0    1
+         0 2197   54
+         1  684   13
+                                          
+               Accuracy : 0.7497          
+                 95% CI : (0.7336, 0.7652)
+    No Information Rate : 0.9773          
+    P-Value [Acc > NIR] : 1               
+                                          
+                  Kappa : -0.0078         
+                                          
+ Mcnemar's Test P-Value : <2e-16          
+                                          
+            Sensitivity : 0.19403         
+            Specificity : 0.76258         
+         Pos Pred Value : 0.01865         
+         Neg Pred Value : 0.97601         
+             Prevalence : 0.02273         
+         Detection Rate : 0.00441         
+   Detection Prevalence : 0.23643         
+      Balanced Accuracy : 0.47831         
+                                          
+       'Positive' Class : 1               
+                                          
+Show in New WindowClear OutputExpand/Collapse Output
+census_msa
+<fctr>
+household_adults
+<fctr>
+household_children
+<fctr>
+h1n1_vaccine
+<fctr>
+Non-MSA	0	0	0
+MSA, Not Principle City	0	0	0
+MSA, Principle City	0	0	0
+MSA, Not Principle City	1	0	0
+MSA, Principle City	2	3	0
+MSA, Not Principle City	0	0	0
+6 rows | 26-29 of 28 columns
+Show in New WindowClear OutputExpand/Collapse Output
+ Show Traceback
+Error in library(MLmetrics) : there is no package called ‘MLmetrics’
+Console/cloud/project/
+Console
+Terminal
+Close Terminal tab
+Jobs
+Close Jobs tab
+/cloud/project/	
+			
+
+			
+
+splitting_data_rf <- sample(1:nrow(df),
+               round(0.7 * nrow(df), 0), 
+               replace = FALSE)
+>>>>>>> 88f614ceb235aba6c69bdb5061dfb19905d5c52f
 
 ## Original Dataset Mtry
 ```{r}
