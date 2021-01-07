@@ -155,7 +155,17 @@ In order to begin building our model, we now proceed to the EDA, followed by the
 
 # EDA {.tabset}
 
-In order to continue with the project, we first wanted to explore the data and to try to get an idea of the types of people within the dataset that may choose to get the vaccine. For this, we decided to create histograms depicting different features from each of the categories we had: presumptions, behavioral, opinion, demographic, and health considerations.
+In order to continue with the project, we first wanted to explore the data and to try to get an idea of the types of people within the dataset that may choose to get the vaccine. For this, we decided to create histograms depicting different features from each of the categories we had: presumptions, behavioral, opinion, demographic, and health considerations. In our EDA, we will mainly be exploring the question of "Who is being represented in the data?" We will then be looking at the various categories to understand the following:
+
+- Presumptions: How concerned and how much knowledge do respondents have regarding the H1N1 virus?
+
+- Behavioral: How have respondents behavior changed in response to the H1N1 virus?
+
+- Opinion: What opinions do the respondents hold regarding H1N1 risk and the vaccine?
+
+- Demographics: What are the demographics of the respondents?
+
+- Health: What health considerations did the respondents report?
 
 ## Histogram for "Presumptions" Variables
 ```{r}
@@ -432,6 +442,36 @@ Utilizing both the polynomial kernel and the radial kernel, we will explore tuni
 
 Following the execution of the SVM, we would like to proceed with the Random Forest and aim to tune the hyperparameters for optimal performance. Having tuned both of the models, the statistical significance of the resulting F1 Scores of each algorithm will be assessed for statistical significance with a t-test.
 
+# Creating the Training, Testing, and Validation Sets
+```{r}
+combined_df <- cbind(df,df_onehot) #28 col in df, 18 col in df_onehot 
+
+# Creating the random training, validation, and testing sets
+data_train <- sample(1:nrow(df),
+               round(0.7 * nrow(df), 0), 
+               replace = FALSE)
+
+data_val <- sample(1:nrow(df),
+               round(0.15 * nrow(df), 0), 
+               replace = FALSE)
+
+data_test <- sample(1:nrow(df),
+               round(0.15 * nrow(df), 0), 
+               replace = FALSE)
+
+#Assigning random selection to original df
+original_train <- combined_df[data_train, 1:28] #Should contain 70% of data points
+original_val <- combined_df[data_val, 1:28]
+original_test <- combined_df[data_test, 1:28 ]
+
+#Assigning random selection to one hot encoded df 
+onehot_train <- combined_df[data_train, 29:45] #Should contain 70% of data points
+onehot_val <- combined_df[data_val, 29:45]
+onehot_val <- combined_df[data_test, 29:45]
+
+```
+
+
 
 # SVM Model {.tabset}
 
@@ -494,14 +534,53 @@ cm
 ```
 
 
+# Random Forest Model {.tabset}
+
+## Splitting the Training, Validating, and Testing Sets
+```{r}
+splitting_data_rf <- sample(1:nrow(df),
+               round(0.7 * nrow(df), 0), 
+               replace = FALSE)
+
+splitting_data_rf_val <- sample(1:nrow(df),
+               round(0.15 * nrow(df), 0), 
+               replace = FALSE)
+
+splitting_data_rf_test <- sample(1:nrow(df),
+               round(0.15 * nrow(df), 0), 
+               replace = FALSE)
+```
+This is creatinng the training, validating, and testing set for the original data prior to feature selection. Our group has chosen to use the 70-15-15 ratio here as well. 
+
+
+## 
+```{r}
+mytry_tune <- function(x){
+  xx <- dim(x)[2]-1
+  sqrt(xx)
+}
+       
+mytry_tune(df)
+```
+Using the mtry_tune function, we find that we should run our initial RF model using mtry = 5.196152, meaning that at each split, five variables will be randomly sampled as candidates at each split.
+
+Run the initial RF model with 500 trees
+
+
+
+
 # Research and Model Limitations
 
 # Future Analysis
 This study primarily focused on developing the best classification model to predict whether a person would receive the H1N1 vaccination or not. However, there are multiple directions that future analysis could go. Below, our group has highlighted the top three future analysis studies we believe would be the strongest and most interesting.
 
-1. This research project focused on specifically the Swine Flu pandemic. For future analysis, completing a similar analysis on data collected from other pandemics and epidemics could be critical. By building models and exploring the topology of the datasets, the data scientist may be able to gain some insight as to what factors make a person more likely to get vaccinated during a pandemic. This is especially important to understand given the current state of the world in regards to the COVID-19 pandemic. In the future as new viruses emerge, having a clear understanding of the factors that contribute to an individual getting a vaccination will become increasingly important. 
+1. This research project focused on specifically the H1N1 (or Swine) Flu epidemic. For future analysis, completing a similar analysis on data collected from other pandemics and epidemics could be critical. A similar analysis could be especially useful when conducting a model build with similar data points and types (such as binary or factor), as well as with similar imbalances in the data. By building models and exploring the topology of the datasets, the data scientist may be able to gain some insight as to what factors make a person more likely to get vaccinated during, or after, a pandemic. They could also use the data to try to predict if a person would get vaccinated in the event of a future pandemic. This is especially important to understand given the current state of the world in regards to the COVID-19 pandemic. It is imperative to note, however, that the COVID-19 pandemic may be somewhat of an “outlier” case. Issues and ideas regarding the vaccine, and even the virus in general, have been hyper-politicized. While the data we examined does not factor into effect political affiliation, that variable would be an important aspect when conducting an analysis on COVID-19. In the future as new viruses emerge, having a clear understanding of the factors that contribute to an individual getting a vaccination will become increasingly important.
 
-2. 
+More information regarding the hyper-politicization of the COVID-19 pandemic and vaccine can be found [here](https://www.washingtonpost.com/politics/2020/12/22/how-political-leaders-could-persuade-more-americans-get-covid-19-vaccination/).
+
+2. Another approach to a future analysis comes in the form of including the seasonal_vaccine variable, and the other seasonal-specific variables that we originally eliminated from our analysis. We originally didn’t include the seasonal data, as to focus on just H1N1 and how we could predict vaccinations from a “new virus” standpoint. By taking an alternative approach by including both seasonal and H1N1 data, we could examine and model trends between the two vaccines - such as specific demographics that showed opposing views between both vaccines, opinions regarding risks associated between the two viruses/vaccines, etc. This could help give us a better idea as to how people react differently when presented with an unusual and abnormal epidemic, in comparison to the yearly virus that they are all used to. We could also take the data from this different approach and use it as inference into how people may view the COVID-19 pandemic and vaccine. In addition, these varying data and trends between the seasonal and H1N1 data could give health officials ideas in regards to running vaccination campaigns. The data would give us insight into certain groups of people who may see their risk from seasonal to the H1N1 flu to be lesser, and could target these groups for public health and vaccination resources to increase vaccination rates and boost public opinion and knowledge.
+
+3. Lastly, another approach could give us incredible insight regarding some of the variables that we were unable to decode. We were unable to decode the anonymous-code-ids from the hhs_geo_region, employment_industry, and employment_occupation features. In a perfect world, we would have the information regarding how to decode these ids and could use the information in an analysis. These data may be beneficial in building a model that more accurately predicts if someone would get the vaccine, or not. For example, geographical region could have a lot to do with a person’s views on the vaccine - whether that be political, access to health resources, number of virus cases in the area, etc. Occupation and employment industry information may also be important, as some workers in certain sectors may feel that they are at more risk to the virus than others, thus wanting the vaccine.
 
 
 # References
