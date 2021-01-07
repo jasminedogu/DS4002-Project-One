@@ -620,6 +620,7 @@ classifier_original_tuned <- svm(formula = h1n1_vaccine ~ .,
                  gamma = 0.5)  #The kernel used in training and predicting
 
 ```
+
 ## Predicting the Test Set Results with Model
 ```{r}
 # Predicting the test set results 
