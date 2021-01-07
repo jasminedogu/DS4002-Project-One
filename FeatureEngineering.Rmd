@@ -203,10 +203,6 @@ library(Matrix)
 df_varOfInt = df %>% 
   select( varsOfInt, h1n1_vaccine)
 
-
-#df_onehot = one_hot(df, dropCols = TRUE) FLOP!
-
-
 df_onehot = as.data.frame(as.matrix(sparse.model.matrix(~. -1, data = df_varOfInt)))
 
 ```
@@ -216,7 +212,7 @@ df_onehot = as.data.frame(as.matrix(sparse.model.matrix(~. -1, data = df_varOfIn
 
 names(df_onehot)[30] <- "h1n1_vaccine"
 
-head(df_onehot)[,1:4]
+#head(df_onehot)[,1:4]
 
 ```
 
