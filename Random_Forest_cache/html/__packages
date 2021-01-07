@@ -1,0 +1,12 @@
+base
+knitr
+dplyr
+ggplot2
+plyr
+mlbench
+GGally
+mltools
+randomForest
+data.table
+lattice
+caret

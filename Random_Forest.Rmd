@@ -4,7 +4,7 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
 library(knitr)
 library(dplyr)
 library(ggplot2)
@@ -12,6 +12,7 @@ library(plyr)
 library(mlbench)
 library(GGally)
 library(mltools)
+library(randomForest)
 library(data.table)
 library(caret)
 set.seed(03092000)
@@ -19,6 +20,57 @@ set.seed(03092000)
 
 ```{r}
 load("Data_Prep.RData")
+```
+
+```{r}
+#finding a mtry value
+mytry_tune <- function(x){
+  xx <- dim(x)[2]-1
+  sqrt(xx)
+}
+       
+mytry_tune(original_train)
+```
+Mtry represents the number of variables randomly samples as candidates at each split. Using the mtry_tune function, we find that we should run our initial RF model using mtry = 5.196152, meaning that at each split, five variables will be randomly sampled as candidates at each split.
+
+```{r}
+#creating initial random forest model with default param (original df)
+model <- randomForest(
+         h1n1_vaccine ~ ., 
+         data = df,
+         ntree = 200,  #due to the computational power we have access to, we will limit ntree to 200
+         mtry = 5,
+         importance = TRUE)
+model
+#plot(model)
+```
+The typical default of the ntree value (number of trees) for the initial random forest model is 500. However, due to the lack of computational power, our group was only able to utilize a max ntree value of 200. 
+
+Here, we can see that our out-of-bag estimation of the error rate is 17.52%. We proceed with fine tuning the parameters of this model.
+
+```{r}
+#fine tuning the parameters of the random forest model 
+#View(model$err.rate)
 
 ```
+For our model, we want to utilize the least number of trees while minimizing our OOB value. Therefore, looking at the error rates, we can see that this is done best at a ntree value of 186.  
+
+```{r}
+# Fine tuning parameters of Random Forest model
+model2 <- randomForest(
+          h1n1_vaccine ~ ., #dependent condition
+          data = df,
+          ntree = 186,
+          mtry = 5, #mtry value found earlier using mtry_tune function
+          importance = TRUE)
+model2
+#plot(model2)
+
+
+```
+After fine tuning the parameters of the Random Forest model by utilizing a ntree value of 186 and a mtry value of 5, the out-of-bag estimate of the error rate was 17.54%. This is a 0.02% increase from the error rate of the un-optimized model. However, compared to the 200 trees that the un-optimized model utilized, this uses 186 trees. Therefore, while there was a slight increase in the error rate, there was still a significant decrease in the number of trees required for the model to perform at a similar error rate.
+
+
+
+
 
