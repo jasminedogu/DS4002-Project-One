@@ -469,7 +469,7 @@ original_test <- combined_df[data_test, 1:28 ]
 #Assigning random selection to one hot encoded df 
 onehot_train <- combined_df[data_train, 29:46] #Should contain 70% of data points
 onehot_val <- combined_df[data_val, 29:46]
-onehot_val <- combined_df[data_test, 29:46]
+onehot_test <- combined_df[data_test, 29:46]
 
 ```
 
@@ -589,11 +589,12 @@ f1score_radial_onehot = 2*0.22293*(105/(576+105))/(0.22293 + (105/(571+105)) )
 f1score_radial_onehot
 
 ```
-With regard to our key metric, the F1 Score improved from 0.1817 , which is still awful. Now, we will set to tuning the hyperparameters, using the data that did not have a reduced feature space. 
+With regard to our key metric, the F1 Score depreciated t0 0.1817, which is awful. Now, we will set to tuning the hyperparameters, using the original data that did not have a reduced feature space. 
 
 
 
 ```{r}
+
 library(e1071)
 obj <- tune(svm, h1n1_vaccine~., data = original_test, 
             ranges = list(gamma = 2^(-1:1), 
@@ -602,10 +603,15 @@ obj <- tune(svm, h1n1_vaccine~., data = original_test,
 summary(obj)
 
 ```
+The indicated optimal performance hyperparameters are gamma = 0.4 and cost = 4.
+
 
 ```{r}
+
 plot(obj)
 ```
+As can be see above, the optimal gamma is 0.5 and the cost was 4!
+
 
 ## Running the Tuned SVM - Radial Kernel  
 ```{r}
@@ -641,11 +647,11 @@ cm
 
 
 ```{r}
-f1score_radial_onehot = 2*0.9374 *(158/(539+158))/(0.9374  + (158/(158+539)) )
+f1score_radial_onehot = 2*0.9374 *(539/(539+158))/(0.9374  + (539/(158+539)) )
 f1score_radial_onehot
 
 ```
-
+The F1 Score unfortunately, increased the F1 Score to 0.8
 
 
 # Random Forest Model {.tabset}
