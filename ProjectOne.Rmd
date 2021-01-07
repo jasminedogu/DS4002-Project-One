@@ -648,7 +648,6 @@ f1score_radial_onehot
 
 # Random Forest Model {.tabset}
 
-<<<<<<< HEAD
 ## Original Dataset Mtry
 ```{r}
 mytry_tune <- function(x){
@@ -659,70 +658,6 @@ mytry_tune <- function(x){
 mytry_tune(original_train)
 ```
 Mtry represents the number of variables randomly samples as candidates at each split. Using the mtry_tune function, we find that we should run our initial RF model using mtry = 5.196152, meaning that at each split, five variables will be randomly sampled as candidates at each split.
-=======
-## Splitting the Training, Validating, and Testing Sets
-```{r}Show in New WindowClear OutputExpand/Collapse Output
-Confusion Matrix and Statistics
-
-          Reference
-Prediction    0    1
-         0 2197   54
-         1  684   13
-                                          
-               Accuracy : 0.7497          
-                 95% CI : (0.7336, 0.7652)
-    No Information Rate : 0.9773          
-    P-Value [Acc > NIR] : 1               
-                                          
-                  Kappa : -0.0078         
-                                          
- Mcnemar's Test P-Value : <2e-16          
-                                          
-            Sensitivity : 0.19403         
-            Specificity : 0.76258         
-         Pos Pred Value : 0.01865         
-         Neg Pred Value : 0.97601         
-             Prevalence : 0.02273         
-         Detection Rate : 0.00441         
-   Detection Prevalence : 0.23643         
-      Balanced Accuracy : 0.47831         
-                                          
-       'Positive' Class : 1               
-                                          
-Show in New WindowClear OutputExpand/Collapse Output
-census_msa
-<fctr>
-household_adults
-<fctr>
-household_children
-<fctr>
-h1n1_vaccine
-<fctr>
-Non-MSA	0	0	0
-MSA, Not Principle City	0	0	0
-MSA, Principle City	0	0	0
-MSA, Not Principle City	1	0	0
-MSA, Principle City	2	3	0
-MSA, Not Principle City	0	0	0
-6 rows | 26-29 of 28 columns
-Show in New WindowClear OutputExpand/Collapse Output
- Show Traceback
-Error in library(MLmetrics) : there is no package called ‘MLmetrics’
-Console/cloud/project/
-Console
-Terminal
-Close Terminal tab
-Jobs
-Close Jobs tab
-/cloud/project/	
-			
-
-			
-
-splitting_data_rf <- sample(1:nrow(df),
-               round(0.7 * nrow(df), 0), 
-               replace = FALSE)
->>>>>>> 88f614ceb235aba6c69bdb5061dfb19905d5c52f
 
 ## Original Dataset Mtry
 ```{r}
