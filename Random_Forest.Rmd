@@ -71,14 +71,45 @@ After fine tuning the parameters of the Random Forest model by utilizing a ntree
 ```{r}
 # predicting on train set
 predTrain <- predict(model2, original_train, type = "class")
-# Checking classification accuracy
+# creating confusion matrix for prediction on train set
+# checking classification accuracy
+mean(predTrain == original_train$h1n1_vaccine)                    
 table(predTrain, original_train$h1n1_vaccine)  
 
-# Predicting on Validation set
-predValid <- predict(model2, original_test, type = "class")
-# Checking classification accuracy
-mean(predValid == original_test$h1n1_vaccine)                    
-table(predValid,original_test$h1n1_vaccine)
+# predicting on testing set
+predTest<- predict(model2, original_test, type = "class")
+# creating confusion matrix for prediction on testing set
+# checking classification accuracy
+mean(predTest == original_test$h1n1_vaccine)                    
+table(predTest,original_test$h1n1_vaccine)
 ```
 
+In the case of prediction on the training dataset, we can see that there are only 123 observations misclassified, and our accuracy is relatively high at 99.12%. There are significantly more true negatives than there are true positives. 
 
+In the case of the prediction on the testing dataset, we can see that there are only 46 observations that were misclassified, and our accuracy is also relatively high at 99.22%. This is about a 0.10% increase in terms of accuracy when compared to the prediction on the training dataset.
+
+updates 
+```{r}
+# checking for important variables in our tuned model
+importance(model2)        
+varImpPlot(model2)  #shows the drop in mean accuracy for each of the variables
+```
+```{r}
+#load("RForestBackup.RData")
+```
+
+#### Visualize random forest results ####
+```{r}
+# visualizing the results of the random forest.
+#install.packages("plotly")
+library(plotly)
+
+rm(fig)
+#fig <- plot_ly(x=pregnancy_RF_error$`Number of Trees`, y=pregnancy_RF_error$Diff,name="Diff", type = 'scatter', mode = 'lines')
+#fig <- fig %>% add_trace(y=pregnancy_RF_error$`Out of the Box`, name="OOB_Er")
+#fig <- fig %>% add_trace(y=pregnancy_RF_error$`Not Pregnant`, name="Not Pregnant")
+#fig <- fig %>% add_trace(y=pregnancy_RF_error$Pregnant, name="Pregnant")
+
+#fig
+
+```
