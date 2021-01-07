@@ -65,12 +65,20 @@ model2 <- randomForest(
           importance = TRUE)
 model2
 #plot(model2)
-
-
 ```
 After fine tuning the parameters of the Random Forest model by utilizing a ntree value of 186 and a mtry value of 5, the out-of-bag estimate of the error rate was 17.54%. This is a 0.02% increase from the error rate of the un-optimized model. However, compared to the 200 trees that the un-optimized model utilized, this uses 186 trees. Therefore, while there was a slight increase in the error rate, there was still a significant decrease in the number of trees required for the model to perform at a similar error rate.
 
+```{r}
+# predicting on train set
+predTrain <- predict(model2, original_train, type = "class")
+# Checking classification accuracy
+table(predTrain, original_train$h1n1_vaccine)  
 
-
+# Predicting on Validation set
+predValid <- predict(model2, original_test, type = "class")
+# Checking classification accuracy
+mean(predValid == original_test$h1n1_vaccine)                    
+table(predValid,original_test$h1n1_vaccine)
+```
 
 
