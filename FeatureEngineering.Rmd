@@ -281,10 +281,10 @@ library(caret)
 cm <- confusionMatrix(original_test$h1n1_vaccine,y_pred_original, positive = "1")
 cm
 ```
-The accuracy and sensitivity were good relative to the basis, at 0.7785 and 0.78205 respectively.
+The accuracy and sensitivity were good relative to the basis, at 0.7863 and 0.8376 respectively.
 
 ```{r}
-f1score_poly = 2*0.78205 *(61/(636+13))/(0.78205  + (61/(636+61)) )
+f1score_poly = 2*0.83766 *(129/(129+1235))/(0.83766  + (129/(1235 + 129)) )
 f1score_poly
 ```
 Our primary metric, the F1 Score, was calculated to be 0.169 - this is awful. Let's try it with the radial kernel. 
@@ -296,7 +296,7 @@ Our primary metric, the F1 Score, was calculated to be 0.169 - this is awful. Le
 # Creating the Second Model - Radial Kernel 
 #install.packages('e1071') 
 library(e1071) 
-
+set.seed(03092000)
 classifier_original2 <- svm(formula = h1n1_vaccine ~ ., 
                  data = original_train, 
                  type = 'C-classification',  #Default
@@ -322,12 +322,12 @@ library(caret)
 cm <- confusionMatrix(original_test$h1n1_vaccine,y_pred_original2, positive = "1")
 cm
 ```
-The overall accuracy improved some to 0.82, while the false positive rate decreased from 0.2216 to 0.1546. 
+The overall accuracy improved some to 0.83, while the false positive rate decreased from 0.2150 to 0.1518. 
 ```{r}
-f1score_radial = 2*0.7303*(306/(391+306))/(0.7303 + (306/(391+306)) )
+f1score_radial = 2*0.7302 *(598/(766+598))/(0.7302  + (598/(766+598)) )
 f1score_radial
 ```
-However, our main metric, the *F1 Score*, is *0.5483*. This is a significant improvement from the the polynomial kernel!
+However, our main metric, the *F1 Score*, is *0.5478*. This is a significant improvement from the the polynomial kernel!
 Let's try with the reduced features!
 
 ## SVM Model w/ Feature Reduction
