@@ -450,6 +450,9 @@ splitting_data <- sample(1:nrow(df),
 splitting_data_test <- sample(1:nrow(df),
                round(0.15 * nrow(df), 0), 
                replace = FALSE)
+splitting_data_validation <- sample(1:nrow(df),
+               round(0.15 * nrow(df), 0), 
+               replace = FALSE)
 
 #Creating the train and test data
 svm_train <- df[splitting_data, ] #Should contain 70% of data points
@@ -459,6 +462,66 @@ svm_test <- df[splitting_data_test, ] #Should contain 15% of data points
 size_of_training <- nrow(svm_train)
 size_of_total <- nrow(df)
 size_of_test <- nrow(svm_test)
+
+#Verification
+paste("The Training Set contains", toString(round(size_of_training/size_of_total,2)*100), "% of the total data")
+paste("The Testing Set contains", toString(round(size_of_test/size_of_total,2)*100), "% of the total data")
+```
+
+## Creating the Model
+```{r}
+#install.packages('e1071') 
+library(e1071) 
+
+classifier <- svm(formula = h1n1_vaccine ~ ., 
+                 data = svm_train, 
+                 type = 'C-classification',  #Default
+                 #can change degree 
+                 kernel = 'polynomial')  #The kernel used in training and predicting
+
+```
+## Predicting the Test Set Results with Model
+```{r}
+# Predicting the test set results 
+head(df)
+y_pred <- predict(classifier, newdata = svm_test[-28]) 
+```
+
+## Creating Confusion Matrix
+```{r}
+# Making a Confusion Matrix 
+#install.packages("caret")
+library(caret)
+cm <- confusionMatrix(svm_test$h1n1_vaccine,y_pred, positive = "1")
+cm
+```
+
+# SVM Model w/ Feature Reduction
+
+## Splitting Data into Training and Testing Set
+```{r}
+# Splitting the dataset into the Training set and Test set 
+#install.packages('caTools') 
+set.seed(03092000)
+library(caTools) 
+  
+# Creating a 70/30 split
+splitting_data_onehot <- sample(1:nrow(df_onehot),
+               round(0.7 * nrow(df_onehot), 0), 
+               replace = FALSE)
+
+splitting_data_test_onehot <- sample(1:nrow(df_onehot),
+               round(0.15 * nrow(df_onehot), 0), 
+               replace = FALSE)
+
+#Creating the train and test data
+svm_train_onehot <- df_onehot[splitting_data_onehot, ] #Should contain 70% of data points
+svm_test_onehot <- df_onehot[splitting_data_test_onehot, ] #Should contain 15% of data points
+
+#Checking to ensure steps above were done correctly
+size_of_training <- nrow(svm_train_onehot)
+size_of_total <- nrow(df_onehot)
+size_of_test <- nrow(svm_test_onehot)
 
 #Verification
 paste("The Training Set contains", toString(round(size_of_training/size_of_total,2)*100), "% of the total data")
