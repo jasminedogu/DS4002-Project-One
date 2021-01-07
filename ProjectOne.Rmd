@@ -418,6 +418,7 @@ As can be seen above, there are 17 variables that we plan to utilize within our 
 #One-Hot Encoding 
 ```{r}
 library(mltools)
+library(Matrix)
 #df_onehot = one_hot(df, dropCols = TRUE) FLOP!
 
 df_onehot = as.data.frame(as.matrix(sparse.model.matrix(~. -1, data = df)))
@@ -472,7 +473,7 @@ onehot_val <- combined_df[data_test, 29:46]
 
 ```
 
-
+We chose a 70/15/15 split for our analysis, due to a variety of beneficial factors. 70% training data allows for ample examples for our model to find the most accurate solutions during the testing phase. 70% allocates enough “practice” data, while still leaving ample data for use later. In addition, 15% of validation data allows us enough space to choose the best model without giving up more training data. Finally 15% of test data, in our opinion, is the perfect sweet spot to test our model to unseen data. This 15% of test data should be accurate after undergoing the training and validation sets.
 
 # SVM Model {.tabset}
 
@@ -649,96 +650,186 @@ f1score_radial_onehot
 
 # Random Forest Model {.tabset}
 
-## Splitting the Training, Validating, and Testing Sets
-```{r}Show in New WindowClear OutputExpand/Collapse Output
-Confusion Matrix and Statistics
-
-          Reference
-Prediction    0    1
-         0 2197   54
-         1  684   13
-                                          
-               Accuracy : 0.7497          
-                 95% CI : (0.7336, 0.7652)
-    No Information Rate : 0.9773          
-    P-Value [Acc > NIR] : 1               
-                                          
-                  Kappa : -0.0078         
-                                          
- Mcnemar's Test P-Value : <2e-16          
-                                          
-            Sensitivity : 0.19403         
-            Specificity : 0.76258         
-         Pos Pred Value : 0.01865         
-         Neg Pred Value : 0.97601         
-             Prevalence : 0.02273         
-         Detection Rate : 0.00441         
-   Detection Prevalence : 0.23643         
-      Balanced Accuracy : 0.47831         
-                                          
-       'Positive' Class : 1               
-                                          
-Show in New WindowClear OutputExpand/Collapse Output
-census_msa
-<fctr>
-household_adults
-<fctr>
-household_children
-<fctr>
-h1n1_vaccine
-<fctr>
-Non-MSA	0	0	0
-MSA, Not Principle City	0	0	0
-MSA, Principle City	0	0	0
-MSA, Not Principle City	1	0	0
-MSA, Principle City	2	3	0
-MSA, Not Principle City	0	0	0
-6 rows | 26-29 of 28 columns
-Show in New WindowClear OutputExpand/Collapse Output
- Show Traceback
-Error in library(MLmetrics) : there is no package called ‘MLmetrics’
-Console/cloud/project/
-Console
-Terminal
-Close Terminal tab
-Jobs
-Close Jobs tab
-/cloud/project/	
-			
-
-			
-
-splitting_data_rf <- sample(1:nrow(df),
-               round(0.7 * nrow(df), 0), 
-               replace = FALSE)
-
-splitting_data_rf_val <- sample(1:nrow(df),
-               round(0.15 * nrow(df), 0), 
-               replace = FALSE)
-
-splitting_data_rf_test <- sample(1:nrow(df),
-               round(0.15 * nrow(df), 0), 
-               replace = FALSE)
-```
-This is creatinng the training, validating, and testing set for the original data prior to feature selection. Our group has chosen to use the 70-15-15 ratio here as well. 
-
-
-## 
+## Original Dataset Mtry
 ```{r}
 mytry_tune <- function(x){
   xx <- dim(x)[2]-1
   sqrt(xx)
 }
        
-mytry_tune(df)
+mytry_tune(original_train)
 ```
-Using the mtry_tune function, we find that we should run our initial RF model using mtry = 5.196152, meaning that at each split, five variables will be randomly sampled as candidates at each split.
+Mtry represents the number of variables randomly samples as candidates at each split. Using the mtry_tune function, we find that we should run our initial RF model using mtry = 5.196152, meaning that at each split, five variables will be randomly sampled as candidates at each split.
 
-Run the initial RF model with 500 trees
+## Original Dataset Mtry
+```{r}
+library(randomForest)
+set.seed(03092000)
+
+#creating the forest
+original_random_forest <- randomForest(h1n1_vaccine ~., 
+                          data = original_train,
+                          ntree = 200, 
+                          mtry = 5,
+                          replace = TRUE,
+                          importance = TRUE)
+
+original_random_forest #view the forest results
+plot(original_random_forest) #plot of the forest results 
+```
+
+
+```{r}
+print(importance(original_random_forest, type = 2, scale = TRUE))  #gives the importance of each predictor 
+#all the metrics together,not scaled
+
+```
+A low Gini or a higher decrease in Gini means that a particular predictor variable plays a greater role in partitioning the data into the defined classes. Therefore, the attribute doctor_recc_h1n1 has the largest mean decrease, meaning it is the most important attribute. Second highest was the opinion_h1n1_risk variable. Lastly, third highest was the opinion_h1n1_vacc_effective variable.
+
+
+```{r}
+View(original_random_forest$err.rate)
+```
 
 
 
+## Original Random Forest Optimized 
+```{r}
+library(randomForest)
+set.seed(03092000)
 
+#creating the forest
+original_random_forest_optimized <- randomForest(h1n1_vaccine ~., 
+                          data = original_train,
+                          ntree = 133, 
+                          mtry = 5,
+                          replace = TRUE,
+                          importance = TRUE)
+
+original_random_forest_optimized #view the forest results
+plot(original_random_forest_optimized) #plot of the forest results 
+
+```
+
+## Comparison of Initial & New Models 
+```{r}
+original_random_forest$confusion
+original_random_forest_optimized$confusion
+census_RF_2_acc = sum(original_random_forest_optimized$confusion[row(original_random_forest_optimized$confusion) == 
+                                                col(original_random_forest_optimized$confusion)]) / 
+  sum(original_random_forest_optimized$confusion)
+
+census_RF_2_acc
+```
+
+
+## Prediction on Training Set 
+NOT WORKING 
+```{r}
+#census_predict = predict(original_random_forest_optimized,      #<- a randomForest model
+                    #     original_test,      #<- the test data set to use
+                    #     type = "response",   #<- what results to produce, see the help menu for the options
+                    #     predict.all = TRUE,  #<- should the predictions of all trees be kept?
+                     #    proximity = TRUE)    #<- should proximity measures be computed
+#View(census_predict)
+
+```
+
+## Assessment of Model Quality 
+NOT WORKING
+```{r}
+#census_test_pred = data.frame(census_test, 
+                         #        Prediction = census_predict$predicted$aggregate)
+
+# View(census_test_pred)
+
+library(caret)
+#confusionMatrix(census_test_pred$Prediction, census_test_pred$income,positive = "1", 
+     #           dnn=c("Prediction", "Actual"), mode = "everything")
+```
+
+
+## Original Random Forest Optimized - TESTING SET
+```{r}
+library(randomForest)
+set.seed(03092000)
+
+#creating the forest
+original_random_forest_testing <- randomForest(h1n1_vaccine ~., 
+                          data = original_test,
+                          ntree = 200, 
+                          mtry = 5,
+                          replace = TRUE,
+                          importance = TRUE)
+
+original_random_forest_testing #view the forest results
+plot(original_random_forest_testing) #plot of the forest results 
+
+```
+
+## One Hot Encoded Dataset Mtry
+```{r}
+mytry_tune <- function(x){
+  xx <- dim(x)[2]-1
+  sqrt(xx)
+}
+       
+mytry_tune(one)
+```
+Mtry represents the number of variables randomly samples as candidates at each split. Using the mtry_tune function, we find that we should run our initial RF model using mtry = 5.196152, meaning that at each split, five variables will be randomly sampled as candidates at each split.
+
+## Original Dataset Mtry
+```{r}
+library(randomForest)
+set.seed(03092000)
+
+#creating the forest
+original_random_forest <- randomForest(h1n1_vaccine ~., 
+                          data = df,
+                          ntree = 200, 
+                          mtry = 5,
+                          replace = TRUE,
+                          importance = TRUE)
+
+original_random_forest #view the forest results
+plot(original_random_forest) #plot of the forest results 
+```
+
+
+```{r}
+print(importance(original_random_forest, type = 2, scale = TRUE))  #gives the importance of each predictor 
+#all the metrics together,not scaled
+
+```
+A low Gini or a higher decrease in Gini means that a particular predictor variable plays a greater role in partitioning the data into the defined classes. Therefore, the attribute doctor_recc_h1n1 has the largest mean decrease, meaning it is the most important attribute. Second highest was the opinion_h1n1_risk variable. Lastly, third highest was the opinion_h1n1_vacc_effective variable.
+
+
+```{r}
+View(original_random_forest$err.rate)
+```
+
+
+
+## Original Random Forest Optimized 
+```{r}
+library(randomForest)
+set.seed(03092000)
+
+#creating the forest
+original_random_forest_optimized <- randomForest(h1n1_vaccine ~., 
+                          data = df,
+                          ntree = 177, 
+                          mtry = 5,
+                          replace = TRUE,
+                          importance = TRUE)
+
+original_random_forest_optimized #view the forest results
+plot(original_random_forest_optimized) #plot of the forest results 
+
+```
+
+
+  
 # Research and Model Limitations
 
 # Future Analysis
