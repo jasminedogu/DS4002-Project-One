@@ -221,17 +221,9 @@ head(df_onehot)[,1:4]
 ```
 
 
-
-
-# Future Direction for Project
-
-Utilizing both the polynomial kernel and the radial kernel, we will explore tuning the hyperparameters and comparing the performance of each as they both possessed similar RMSE values. We initially ran multiple kernels and selected the Polynomial Kernel due to its low RMSE of 0.401, with the Radial Kernel following close behind at an RSME of 0.417. However, because these kernel’s performed very similarly with regard to our loss function, we would still like to further assess both kernels.
-
-Following the execution of the SVM, we would like to proceed with the Random Forest and aim to tune the hyperparameters for optimal performance. Having tuned both of the models, the statistical significance of the resulting F1 Scores of each algorithm will be assessed for statistical significance with a t-test.
-
-
-# Creating the Training, Testing, and Validation Sets
 ```{r}
+# Creating the Training, Testing, and Validation Sets
+
 combined_df <- cbind(df,df_onehot) #28 col in df, 30 col in df_onehot 
 
 # Creating the random training, validation, and testing sets
@@ -239,27 +231,21 @@ data_train <- sample(1:nrow(df),
                round(0.7 * nrow(df), 0), 
                replace = FALSE)
 
-data_val <- sample(1:nrow(df),
-               round(0.15 * nrow(df), 0), 
-               replace = FALSE)
-
 data_test <- sample(1:nrow(df),
-               round(0.15 * nrow(df), 0), 
+               round(0.3 * nrow(df), 0), 
                replace = FALSE)
 
 #Assigning random selection to original df
 original_train <- combined_df[data_train, 1:28] #Should contain 70% of data points
-original_val <- combined_df[data_val, 1:28]
 original_test <- combined_df[data_test, 1:28 ]
 
 #Assigning random selection to one hot encoded df 
 onehot_train <- combined_df[data_train, 29:58] #Should contain 70% of data points
-onehot_val <- combined_df[data_val, 29:58]
 onehot_test <- combined_df[data_test, 29:58]
 
 ```
 
-We chose a 70/15/15 split for our analysis, due to a variety of beneficial factors. 70% training data allows for ample examples for our model to find the most accurate solutions during the testing phase. 70% allocates enough “practice” data, while still leaving ample data for use later. In addition, 15% of validation data allows us enough space to choose the best model without giving up more training data. Finally 15% of test data, in our opinion, is the perfect sweet spot to test our model to unseen data. This 15% of test data should be accurate after undergoing the training and validation sets.
+We chose a 70/30 split for our analysis, due to a variety of beneficial factors. 70% training data allows for ample examples for our model to find the most accurate solutions during the testing phase. 70% allocates enough “practice” data, while still leaving ample data for use later. 30% of test data, in our opinion, is the perfect sweet spot to test our model to unseen data.
 
 # SVM Model {.tabset}
 
