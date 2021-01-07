@@ -20,7 +20,7 @@ set.seed(03092000)
 ```
 
 ```{r}
-load("Data_Prep.RData")
+load("DataPrep.RData")
 ```
 
 ```{r}
@@ -38,7 +38,7 @@ Mtry represents the number of variables randomly samples as candidates at each s
 #creating initial random forest model with default param (original df)
 model <- randomForest(
          h1n1_vaccine ~ ., 
-         data = df,
+         data = original_train,
          ntree = 200,  #due to the computational power we have access to, we will limit ntree to 200
          mtry = 5,
          importance = TRUE)
@@ -47,27 +47,27 @@ model
 ```
 The typical default of the ntree value (number of trees) for the initial random forest model is 500. However, due to the lack of computational power, our group was only able to utilize a max ntree value of 200. 
 
-Here, we can see that our out-of-bag estimation of the error rate is 17.52%. We proceed with fine tuning the parameters of this model.
+Here, we can see that our out-of-bag estimation of the error rate is 17.42%. We proceed with fine tuning the parameters of this model.
 
 ```{r}
 #fine tuning the parameters of the random forest model 
 #View(model$err.rate)
 
 ```
-For our model, we want to utilize the least number of trees while minimizing our OOB value. Therefore, looking at the error rates, we can see that this is done best at a ntree value of 186.  
+For our model, we want to utilize the least number of trees while minimizing our OOB value. Therefore, looking at the error rates, we can see that this is done best at a ntree value of 188  
 
 ```{r}
 # Fine tuning parameters of Random Forest model
 model2 <- randomForest(
           h1n1_vaccine ~ ., #dependent condition
-          data = df,
-          ntree = 186,
+          data = original_train,
+          ntree = 188,
           mtry = 5, #mtry value found earlier using mtry_tune function
           importance = TRUE)
 model2
 #plot(model2)
 ```
-After fine tuning the parameters of the Random Forest model by utilizing a ntree value of 186 and a mtry value of 5, the out-of-bag error estimate rate was 17.54%. This is a 0.02% increase from the error rate of the un-optimized model. However, compared to the 200 trees that the un-optimized model utilized, this uses 186 trees. Therefore, while there was a slight increase in the error rate, there was still a significant decrease in the number of trees required for the model to perform at a similar error rate.
+After fine tuning the parameters of the Random Forest model by utilizing a ntree value of 188 and a mtry value of 5, the out-of-bag error estimate rate was 17.46%. This is a 0.04% increase from the error rate of the un-optimized model. However, compared to the 200 trees that the un-optimized model utilized, this uses 188 trees. Therefore, while there was a slight increase in the error rate, there was still a significant decrease in the number of trees required for the model to perform at a similar error rate.
 
 ```{r}
 # predicting on train set
@@ -85,11 +85,11 @@ mean(predTest == original_test$h1n1_vaccine)
 table(predTest,original_test$h1n1_vaccine)
 ```
 
-In the case of prediction on the training dataset, we can see that there are only 123 observations misclassified, and our accuracy is relatively high at 99.12%. There are significantly more true negatives than there are true positives. 
+In the case of prediction on the training dataset, we can see that there are only 92 observations misclassified, and our accuracy is relatively high at 99.33%. There are significantly more true negatives than there are true positives. 
 
-In the case of the prediction on the testing dataset, we can see that there are only 46 observations that were misclassified, and our accuracy is also relatively high at 99.22%. This is about a 0.10% increase in terms of accuracy when compared to the prediction on the training dataset.
+In the case of the prediction on the testing dataset, we can see that there are only 342 observations that were misclassified, and our accuracy is also relatively high at 94.20%. This is about a 5.13% decrease in terms of accuracy when compared to the prediction on the training dataset.
 
-updates 
+
 ```{r}
 x<-  as.data.frame(importance(model2))
 # checking for important variables in our tuned model
@@ -104,7 +104,6 @@ Looking at the importance of the variables, its critical to consider the mean de
 We can see that doctor_recc_h1n1, opinion_h1n1_risk, and opinion_h1n1_vacc_effective (in that particular order) are the highest values for both the mean decrease accuracy and the mean decrease gini.
 
 ```{r}
-load("RForestBackup.RData")
 ```
 
 #One Hot Train
@@ -115,11 +114,34 @@ mytry_tune(onehot_train)
 Mtry represents the number of variables randomly samples as candidates at each split. Using the mtry_tune function, we find that we should run our initial RF model using mtry = 5.385165, meaning that at each split, six variables will be randomly sampled as candidates at each split.
 
 ```{r}
-#creating initial random forest model with default param (onehot df)
+load("RandomForest_Original.RData")
 
+#creating initial random forest model with default param (onehot df)
+names(onehot_train)[names(onehot_train) == "education12 Years"] <- "education12Years"
+names(onehot_train)[names(onehot_train) == "educationCollege Graduate"] <- "educationCollegeGraduate"
+names(onehot_train)[names(onehot_train) == "educationSome College"] <- "educationSomeCollege"
+names(onehot_train)[names(onehot_train) == "raceOther or Multiple"] <- "raceOtherorMultiple"
+names(onehot_train)[names(onehot_train) == "age_group35 - 44 Years"] <- "age_group35_44Years"
+names(onehot_train)[names(onehot_train) == "age_group45 - 54 Years"] <- "age_group45_54Years"
+names(onehot_train)[names(onehot_train) == "age_group55 - 64 Years"] <- "age_group55_64Years"
+names(onehot_train)[names(onehot_train) == "age_group65+ Years"] <- "age_group65andUpYears"
+
+names(onehot_test)[names(onehot_test) == "education12 Years"] <- "education12Years"
+names(onehot_test)[names(onehot_test) == "educationCollege Graduate"] <- "educationCollegeGraduate"
+names(onehot_test)[names(onehot_test) == "educationSome College"] <- "educationSomeCollege"
+names(onehot_test)[names(onehot_test) == "raceOther or Multiple"] <- "raceOtherorMultiple"
+names(onehot_test)[names(onehot_test) == "age_group35 - 44 Years"] <- "age_group35_44Years"
+names(onehot_test)[names(onehot_test) == "age_group45 - 54 Years"] <- "age_group45_54Years"
+names(onehot_test)[names(onehot_test) == "age_group55 - 64 Years"] <- "age_group55_64Years"
+names(onehot_test)[names(onehot_test) == "age_group65+ Years"] <- "age_group65andUpYears"
+
+onehot_train[,] <- lapply(onehot_train[,], factor)  ## as.factor() could also be used
+onehot_test[,] <- lapply(onehot_test[,], factor)  ## as.factor() could also be used
+
+#str(onehot_train)
 model_oh <- randomForest(
          h1n1_vaccine ~ ., 
-         data = df_onehot,
+         data = onehot_train,
          ntree = 200,  #due to the computational power we have access to, we will limit ntree to 200
          mtry = 6,
          importance = TRUE)
@@ -128,27 +150,28 @@ model_oh
 ```
 The typical default of the ntree value (number of trees) for the initial random forest model is 500. However, due to the lack of computational power, our group was only able to utilize a max ntree value of 200. 
 
-Here, we can see that our out-of-bag estimation of the error rate is 17.52%. We proceed with fine tuning the parameters of this model.
+Here, we can see that our out-of-bag estimation of the error rate is 17.97%. We proceed with fine tuning the parameters of this model.
 
 ```{r}
 #fine tuning the parameters of the random forest model 
-#View(model_oh$err.rate)
+View(model_oh$err.rate)
 
 ```
-For our model, we want to utilize the least number of trees while minimizing our OOB value. Therefore, looking at the error rates, we can see that this is done best at a ntree value of 186.  
+For our model, we want to utilize the least number of trees while minimizing our OOB value. Therefore, looking at the error rates, we can see that this is done best at a ntree value of 104.  
 
 ```{r}
 # Fine tuning parameters of Random Forest model
 model_oh2 <- randomForest(
           h1n1_vaccine ~ ., #dependent condition
-          data = df_onehot,
-          ntree = ,
+          data = onehot_train,
+          ntree =104 ,
           mtry = 6, #mtry value found earlier using mtry_tune function
           importance = TRUE)
 model_oh2
+#colnames(df_onehot)
 #plot(model_oh2)
 ```
-After fine tuning the parameters of the Random Forest model by utilizing a ntree value of 186 and a mtry value of 5, the out-of-bag error estimate rate was 17.54%. This is a 0.02% increase from the error rate of the un-optimized model. However, compared to the 200 trees that the un-optimized model utilized, this uses 186 trees. Therefore, while there was a slight increase in the error rate, there was still a significant decrease in the number of trees required for the model to perform at a similar error rate.
+After fine tuning the parameters of the Random Forest model by utilizing a ntree value of 104 and a mtry value of 6, the out-of-bag error estimate rate was 18.3%. This is a 0.33% increase from the error rate of the un-optimized model. However, compared to the 200 trees that the un-optimized model utilized, this uses 104 trees. Therefore, while there was a slight increase in the error rate, there was still a significant decrease in the number of trees required for the model to perform at a similar error rate.
 
 ```{r}
 # predicting on train set
@@ -159,27 +182,29 @@ mean(predTrain == onehot_train$h1n1_vaccine)
 table(predTrain, onehot_train$h1n1_vaccine)  
 
 # predicting on testing set
-predTest<- predict(model2, onehot_test, type = "class")
+predTest<- predict(model_oh2, onehot_test, type = "class")
 # creating confusion matrix for prediction on testing set
 # checking classification accuracy
 mean(predTest == onehot_test$h1n1_vaccine)                    
 table(predTest,onehot_test$h1n1_vaccine)
 ```
 
-In the case of prediction on the training dataset, we can see that there are only 123 observations misclassified, and our accuracy is relatively high at 99.12%. There are significantly more true negatives than there are true positives. 
+In the case of prediction on the training dataset, we can see that there are only 1556 observations misclassified, and our accuracy is relatively high at 88.69%. There are significantly more true negatives than there are true positives. 
 
-In the case of the prediction on the testing dataset, we can see that there are only 46 observations that were misclassified, and our accuracy is also relatively high at 99.22%. This is about a 0.10% increase in terms of accuracy when compared to the prediction on the training dataset.
+In the case of the prediction on the testing dataset, we can see that there are only 46 observations that were misclassified, and our accuracy is also relatively high at 86.47%. This is about a 2.22% decrease in terms of accuracy when compared to the prediction on the training dataset.
 
 updates 
 ```{r}
-x<-  as.data.frame(importance(model_oh2))
+x2<-  as.data.frame(importance(model_oh2))
 # checking for important variables in our tuned model
 
-newdata <- x[order(-x$MeanDecreaseAccuracy, -x$MeanDecreaseGini),]
+newdata2 <- x2[order(-x2$MeanDecreaseAccuracy, -x$MeanDecreaseGini),]
 print(newdata,10)
 
 varImpPlot(model_oh2)  #shows the drop in mean accuracy for each of the variables
 ```
+We can see that doctor_recc_h1n1, health_worker1, and opinion_h1n1_vacc_effective5 (in that particular order) are the highest values for both the mean decrease accuracy and the mean decrease gini.
+
 
 
 
