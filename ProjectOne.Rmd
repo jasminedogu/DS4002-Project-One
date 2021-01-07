@@ -668,6 +668,23 @@ f1score_radial_onehot
 The F1 Score improved to achieve an score of 0.664! In addition, the kappa value (useful in scenarios like ours with unbalanced data), also improved to 0.5927, up from the pre-tuned model which had a Kappa value of 0.4788.
 
 
+#Comparative Modeling Assessment - Support Vector Machine  
+```{r}
+svm_results = 
+
+
+
+```
+
+
+
+
+
+
+
+
+
+
 # Random Forest Model {.tabset}
 
 ## Original Dataset Mtry
