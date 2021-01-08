@@ -704,13 +704,7 @@ kable(svm_results)
 
 
 ```
-As shown above, the models all performed generally better across the board as we continued to test. Relating to our primary metric F1 Score, our optimal F1 score was 0.6639, significantly increasing from the first model to the optimized final model. In addition, another metric we were observing due to the imbalanced nature of our data was the kappa value, which also drastically increased from the base model to the final model. 
-
-
-
-
-
-
+As shown above, the models all performed generally better across the board as we continued to test. Relating to our primary metric F1 Score, our optimal F1 score was 0.6639, significantly increasing from the first model to the optimized final model. In addition, another metric we were observing due to the imbalanced nature of our data was the kappa value, which also drastically increased from the base model to the final model. Now, we will examine the Random Forest Model.
 
 
 
@@ -895,6 +889,23 @@ plot(original_random_forest_optimized) #plot of the forest results
 ```
 
 
+
+```{r}
+
+Model_RF = c("Random Forest", "Tuned", "Random Forest", "Tuned Random Forest")
+Dataset_RF = c("Original", "Original", "Feature Reduced", "Feature Reduced")
+F1Score_RF = c(0.8670, 0.8655, 0.6646, 0.6649)
+Kappa_RF = c(0.8303,0.8285, 0.5860, 0.5862)
+Specificity_RF = c(0.9453, 0.9444, 0.8790, 0.8791)
+Sensitivity_RF = c(0.9298, 0.9310, 0.8122, 0.8116)
+Accuracy_RF = c(0.9422, 0.9417, 0.8682, 0.8682)
+
+RF_results = data.frame( Model_RF, Dataset_RF, F1Score_RF, Kappa_RF, Specificity_RF, Sensitivity_RF, Accuracy_RF)
+
+kable(RF_results)
+
+```
+The Aggregated Random Forest Model Results are shown above. The best performing model in terms of F1 Score was the original polynomial kernel. We want to select the tuned random forest for further exploration and use, due to the decrasedd computing burden necessary. This is because the tuned model utilized 188 trees, as opposed to the 200 trees utilized in the original random forest model, which only performed slightly better (F1 Score 0.0015 better). 
   
 # Research and Model Limitations
 
