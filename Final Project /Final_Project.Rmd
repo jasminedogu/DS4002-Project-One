@@ -38,6 +38,7 @@ We will first begin by explaining some background information on the H1N1 virus,
 **Note**: The F1 score was the metric used to primarily evaluate the two models. To determine if the F1 scores are statistically significant, a **Wilcoxon Rank-Sum Test** will be utilized. More information about this can be found in the "Why F1 Score" section below.
 
 # Why a Focus on F1 Score  
+
 ![Reference 3](/cloud/project/f1.png)
 
 Throughout our project, we will be looking at multiple metrics to evaluate the performance of the SVM and Random Forest models. These include **accuracy, precision (specificity), and recall (sensitivity)**. While all of these metrics will play a role in how we tune the models' parameter and determine which model is more successful, to answer our question of which model outperforms the other we will be looking at the **F1 value**. 
