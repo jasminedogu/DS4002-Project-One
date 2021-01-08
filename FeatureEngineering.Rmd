@@ -1,0 +1,437 @@
+---
+title: "Feature Engineering"
+author: "Christos Chen, Jasmine Dogu, Brian Wimmer"
+date: "Janurary 7, 2021"
+output:
+  html_document:
+    toc: TRUE
+    theme: spacelab
+    toc_float: TRUE
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning=FALSE, message=FALSE, error=FALSE, cache = TRUE)
+library(knitr)
+library(dplyr)
+library(ggplot2)
+library(plyr)
+library(mlbench)
+library(GGally)
+library(mltools)
+library(data.table)
+library(caret)
+set.seed(03092000)
+```
+# Research Question and Hypotheses  
+**Goal**: Through this project, our group hopes to utilize both the **Support Vector Machine** (SVM) and **Random Forest Classifier** models to predict whether a person is or is not going to get the H1N1 vaccine. These two algorithms were selected for the reasons that are provided below in the "Why Support Vector Machine and Random Forest Classifier" section. 
+
+We will first begin by explaining some background information on the H1N1 virus, the dataset, and the two machine learning algorithms. From there, we will proceed with the model creation and the parameter tuning. Lastly, we will draw conclusions from our findings and discuss future applications. 
+
+**General Question**: Will the SVM or the Random Forest Model Predict the Likelihood of a Person Getting the H1N1 Vaccine Better?
+
+**Null Hypothesis**: The SVM Polynomial Kernel will not outperform the Random Forest Classifier Model with regards to its F1 Score 
+**Alternative Hypothesis**: The SVM Polynomial Kernel will outperform the Random Forest Classifier Model with regards to its F1 Score
+
+**Note**: The F1 score was the metric used to primarily evaluate the two models. To determine if the F1 scores are statistically significant, a **t-test** will be utilized.
+
+
+```{r, include=FALSE}
+df_features <- read.csv("training_set_features.csv")
+df_label <- read.csv("training_set_labels.csv")
+df <- merge(df_features,df_label,by="respondent_id")
+#head(df)
+#sum(nrow(df))
+```
+
+```{r}
+df <- df[, -which(names(df) %in% c("doctor_recc_seasonal","opinion_seas_vacc_effective","opinion_seas_risk","opinion_seas_sick_from_vacc", "seasonal_vaccine"))]
+#head(df)
+```
+
+```{r}
+df <- replace(df, df == "", NA)
+```
+
+```{r}
+#colSums(is.na(df))
+```
+
+```{r}
+df <- df[, -which(names(df) %in% c("employment_occupation","health_insurance","employment_industry", "hhs_geo_region", "respondent_id"))]
+df<- na.omit(df)
+#write.csv(df,"df2.csv", row.names = TRUE) #saving to a new csv file
+df2<- read.csv("df2.csv")  
+#nrow(df)
+```
+
+```{r}
+df[,] <- lapply(df[,], factor)  ## as.factor() could also be used
+#str(df)
+#write.csv(df,"cleaned_df.csv", row.names = TRUE) #saving to a new csv file
+```
+
+
+# Feature Selection {.tabset}
+
+## Corellogram 
+```{r, message = FALSE, warnings = FALSE}
+h1n1_correlation = ggcorr(df2, method = c("everything", "pearson"), title = "H1N1 Factors Correlogram")
+h1n1_correlation
+```
+
+* talk about how the variables are not factors* 
+
+A correlogram was utilized to inform and guide future efforts for feature selection. We aimed to identify variables weakly and strongly correlated to the target variable and then test model performance with & without those variables. As demonstrated above, none of the variables are particularly strongly correlated with whether someone relieved the h1n1 vaccination. However, the most correlated are **doctor recommendation**, **opinion about the risk of getting sick with the flu vaccine**, and their **opinion of whether or not the h1n1 vaccine was effective** with correlations of **0.13**, **0.11**, and **0.09** respectively.
+
+Because we determined that no variables were highly correlated, we will not have to remove any of the features and can move on to the LASSO Regression.
+
+## LASSO Regression Model 
+
+### Why LASSO Regression
+
+Initially, we want to utilize lasso regression to reduce the feature space. LASSO regression is an analysis method that utilizes both variable selection and regularization to further enhance the predictive accuracy and interpretability. It imposes a constraint on the model parameters that causes the regression coefficients for some of the variables to shrink towards zero.
+
+### Preparing the Data
+```{r}
+set.seed(03092000)
+library(mltools)
+library(data.table)
+
+# Split the data into training and test set
+training.samples <- df$h1n1_vaccine %>% 
+  createDataPartition(p = 0.8, list = FALSE)
+train.data  <- df[training.samples, ]
+test.data <- df[-training.samples, ]
+
+#newdata <- one_hot(as.data.table(df))
+
+# Dummy code categorical predictor variables
+x <- model.matrix(h1n1_vaccine~., train.data)[,]
+# Convert the outcome (class) to a numerical variable
+y <- ifelse(train.data$h1n1_vaccine == 1, 1, 0)
+```
+
+### Computing Penalized Logistic Regression
+```{r}
+set.seed(03092000)
+library(glmnet)
+
+#Computing the Penalized Logistic Regression
+LASSO_Reg <-glmnet(x, y, family = "binomial", alpha = 1) 
+
+#Fit the final model on the training data
+model <- glmnet(x, y, alpha = 1, family = "binomial",
+                lambda =  LASSO_Reg$lambda.min)
+
+# Make predictions on the test data
+x.test <- model.matrix(h1n1_vaccine ~., test.data)[,]
+probabilities <- model %>% predict(newx = x.test)
+predicted.classes <- ifelse(probabilities > 0.5, "pos", "neg")
+
+#coef(LASSO_Reg)  #display regression coefficients
+plot(LASSO_Reg) #each lines a feature, the ones retained are the ones on the top 
+```
+
+
+```{r}
+#getting the actual coefficient for lambda 
+coeffs <- coef(LASSO_Reg, s = 0.1) 
+coeffs.df <- data.frame(name = coeffs@Dimnames[[1]][coeffs@i + 1], coefficient = coeffs@x) 
+
+# reordering the variables in term of coefficients
+coeffs.df[order(coeffs.df$coefficient, decreasing = T),]
+
+#cross-validation done by cv.glmnet
+cv.fit <- cv.glmnet(x, y)
+cv.fit
+
+plot(cv.fit)
+
+#1SE furthest to the right for lambda 
+cv.fit$lambda.min
+
+#Optimized run of the model 
+optimal_reg <-glmnet(x, y, family = "binomial", alpha = 0.006919) 
+plot(optimal_reg) #look back at the coefficients 
+#coef(optimal_reg)
+```
+
+
+```{r}
+# create a function to transform coefficient of glmnet and cvglmnet to data.frame
+coeff2dt <- function(fitobject, s) {
+  coeffs <- coef(fitobject, s) 
+  coeffs.dt <- data.frame(name = coeffs@Dimnames[[1]][coeffs@i + 1], coefficient = coeffs@x) 
+
+  # reorder the variables in term of coefficients
+  return(coeffs.dt[order(coeffs.dt$coefficient, decreasing = T),])
+}
+
+coeff2dt(fitobject = cv.fit, s = "lambda.min") %>% head(30)
+
+#threshold - block method (prop.) 
+```
+
+### Creating a Lasso Coefficient Plot
+```{r}
+coeffs.table <- coeff2dt(fitobject = cv.fit, s = "lambda.min")
+ggplot(data = coeffs.table) +
+  geom_col(aes(x = name, y = coefficient, fill = {coefficient > 0})) +
+  xlab(label = "") +
+  ggtitle(expression(paste("Lasso Coefficients with ", lambda, " = 0.006919"))) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "none") 
+```
+
+# Isolate Variables of Interest 
+```{r}
+varOfInterestPos = coeff2dt(fitobject = cv.fit, s = "lambda.min") %>% filter(coefficient >= 0.03)
+varOfInterestNeg = coeff2dt(fitobject = cv.fit, s = "lambda.min") %>% filter(coefficient <= -0.03)
+varOfInterest = c( varOfInterestPos[,1], varOfInterestNeg[,1])
+varOfInterestFinal = varOfInterest[varOfInterest != "(Intercept)"]
+varOfInterestFinal
+
+varsOfInt = c('opinion_h1n1_risk', 'opinion_h1n1_vacc_effective', 'child_under_6_months', 'education', 'opinion_h1n1_sick_from_vacc', 'race', 'age_group', 'health_worker', 'doctor_recc_h1n1', 'h1n1_concern')
+```
+As can be seen above, there are 17 variables that we plan to utilize within our SVM model. This significant reduction of the feature space promotes sparsity and makes the model *"mean and lean"* as described by Professor Wright.
+
+# One-Hot Encoding 
+```{r}
+library(mltools)
+library(Matrix)
+
+df_varOfInt = df %>% 
+  select( varsOfInt, h1n1_vaccine)
+
+df_onehot = as.data.frame(as.matrix(sparse.model.matrix(~. -1, data = df_varOfInt)))
+
+```
+
+
+```{r}
+
+names(df_onehot)[30] <- "h1n1_vaccine"
+
+#head(df_onehot)[,1:4]
+
+```
+
+
+```{r}
+# Creating the Training, Testing, and Validation Sets
+
+combined_df <- cbind(df,df_onehot) #28 col in df, 30 col in df_onehot 
+
+# Creating the random training, validation, and testing sets
+data_train <- sample(1:nrow(df),
+               round(0.7 * nrow(df), 0), 
+               replace = FALSE)
+
+data_test <- sample(1:nrow(df),
+               round(0.3 * nrow(df), 0), 
+               replace = FALSE)
+
+#Assigning random selection to original df
+original_train <- combined_df[data_train, 1:28] #Should contain 70% of data points
+original_test <- combined_df[data_test, 1:28 ]
+
+#Assigning random selection to one hot encoded df 
+onehot_train <- combined_df[data_train, 29:58] #Should contain 70% of data points
+onehot_test <- combined_df[data_test, 29:58]
+
+```
+
+We chose a 70/30 split for our analysis, due to a variety of beneficial factors. 70% training data allows for ample examples for our model to find the most accurate solutions during the testing phase. 70% allocates enough “practice” data, while still leaving ample data for use later. 30% of test data, in our opinion, is the perfect sweet spot to test our model to unseen data.
+
+# SVM Model {.tabset}
+
+
+
+```{r}
+## Creating the First Model - Polynomial Kernel 
+#install.packages('e1071') 
+library(e1071) 
+set.seed(03092000)
+classifier_original <- svm(formula = h1n1_vaccine ~ ., 
+                 data = original_train, 
+                 type = 'C-classification',  #Default
+                 #can change degree 
+                 kernel = 'polynomial')  #The kernel used in training and predicting
+
+```
+
+```{r}
+## Predicting the Test Set Results with Model
+# Predicting the test set results 
+
+y_pred_original <- predict(classifier_original, newdata = original_test[-28]) 
+```
+
+## Original data - SVM Polynomial Kernel
+
+### Confusion Matrix
+```{r}
+# Making a Confusion Matrix 
+#install.packages("caret")
+library(caret)
+cm <- confusionMatrix(original_test$h1n1_vaccine,y_pred_original, positive = "1")
+cm
+```
+The accuracy and sensitivity were good relative to the basis, at 0.7863 and 0.8376 respectively.
+
+```{r}
+f1score_poly = 2*0.83766 *(129/(129+1235))/(0.83766  + (129/(1235 + 129)) )
+f1score_poly
+```
+Our primary metric, the F1 Score, was calculated to be 0.1699 - this is awful. Let's try it with the radial kernel. 
+
+
+
+
+```{r}
+# Creating the Second Model - Radial Kernel 
+#install.packages('e1071') 
+library(e1071) 
+set.seed(03092000)
+classifier_original2 <- svm(formula = h1n1_vaccine ~ ., 
+                 data = original_train, 
+                 type = 'C-classification',  #Default
+                 #can change degree 
+                 kernel = 'radial')  #The kernel used in training and predicting
+
+```
+
+```{r}
+## Predicting the Test Set Results with Model
+# Predicting the test set results 
+
+y_pred_original2 <- predict(classifier_original2, newdata = original_test[-28]) 
+```
+
+## Original data - SVM Radial Kernel
+
+### Confusion Matrix
+```{r}
+# Making a Confusion Matrix 
+#install.packages("caret")
+library(caret)
+cm_original_radial <- confusionMatrix(original_test$h1n1_vaccine,y_pred_original2, positive = "1")
+cm_original_radial
+```
+The overall accuracy improved some to 0.83, while the false positive rate decreased from 0.2150 to 0.1518. 
+```{r}
+f1score_radial = 2*0.7302 *(598/(766+598))/(0.7302  + (598/(766+598)) )
+f1score_radial
+```
+However, our main metric, the *F1 Score*, is *0.5478*. This is a significant improvement from the the polynomial kernel!
+Let's try with the reduced features!
+
+
+## SVM Model w/ Feature Reduction
+
+
+```{r}
+#install.packages('e1071') 
+library(e1071) 
+set.seed(03092000)
+
+classifier_onehot <- svm(formula = h1n1_vaccine ~ ., 
+                 data = onehot_train, 
+                 type = 'C-classification',  #Default
+                 #can change degree 
+                 kernel = 'radial')  #The kernel used in training and predicting
+
+```
+
+
+```{r}
+# Predicting the test set results 
+#head(df)
+y_pred_onehot <- predict(classifier_onehot, newdata = onehot_test[-18]) 
+```
+
+## Reduced Features - SVM Polynomial Kernel
+
+### Confusion Matrix
+```{r}
+# Making a Confusion Matrix 
+#install.packages("caret")
+library(caret)
+cm <- confusionMatrix(as.factor(onehot_test$h1n1_vaccine),y_pred_onehot, positive = "1")
+cm
+```
+
+Notably there are improvements in accuracy and sensitivity. The accuracy improved slightly from 0.74 to 0.78 while the sensitivity improved significantly from 0.19 to 0.91. The balanced accuracy improved significantly from 0.48 to 0.85.
+
+```{r}
+f1score_radial_onehot = 2*0.22293*(105/(576+105))/(0.22293 + (105/(571+105)) )
+f1score_radial_onehot
+
+```
+With regard to our key metric, the F1 Score improved from 0.1817 , which is still awful. Now, we will set to tuning the hyperparameters, using the original data that did not have a reduced feature space. 
+
+
+# Tuning Hyperparameters
+```{r}
+
+library(e1071)
+obj <- tune(svm, h1n1_vaccine~., data = original_test, 
+            ranges = list(gamma = 2^(-1:1), 
+                          cost = 2^(2:4)),
+            tunecontrol = tune.control(sampling = "fix"))
+summary(obj)
+
+```
+The indicated optimal performance hyperparameters are gamma = 0.4 and cost = 4.
+
+## Optimal Parameter Plot
+```{r}
+
+plot(obj)
+```
+As can be see above, the optimal gamma is 0.5 and the cost was 4!
+
+
+  
+```{r}
+## Running the Tuned SVM - Radial Kernel
+#install.packages('e1071') 
+library(e1071) 
+
+classifier_original_tuned <- svm(formula = h1n1_vaccine ~ ., 
+                 data = original_train, 
+                 type = 'C-classification',  #Default
+                 #can change degree 
+                 kernel = 'radial',
+                 cost = 4,
+                 gamma = 0.5)  #The kernel used in training and predicting
+
+```
+
+
+
+```{r}
+## Predicting the Test Set Results with Model
+# Predicting the test set results 
+
+y_pred_original_tuned <- predict(classifier_original_tuned, newdata = original_test[-28]) 
+```
+
+## Original data - Tuned SVM Radial Kernel
+
+### Confusion Matrix
+```{r}
+# Making a Confusion Matrix 
+#install.packages("caret")
+library(caret)
+cm <- confusionMatrix(original_test$h1n1_vaccine,y_pred_original_tuned, positive = "1")
+cm
+```
+
+
+```{r}
+f1score_radial_onehot = 2*0.9374 *(158/(539+158))/(0.9374  + (158/(158+539)) )
+f1score_radial_onehot
+
+```
+The F1 Score unfortunately, decreases the F1 Score by ~ 0.2 to 0.365.

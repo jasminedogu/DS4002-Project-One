@@ -12,7 +12,7 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE, warning=FALSE, message=FALSE, error=FALSE, cache = TRUE)
 library(knitr)
 library(dplyr)
 library(ggplot2)
@@ -32,10 +32,10 @@ We will first begin by explaining some background information on the H1N1 virus,
 
 **General Question**: Will the SVM or the Random Forest Model Predict the Likelihood of a Person Getting the H1N1 Vaccine Better?
 
-**Null Hypothesis**: The SVM Polynomial Kernel will not outperform the Random Forest Classifier Model with regards to its F1 Score 
-**Alternative Hypothesis**: The SVM Polynomial Kernel will outperform the Random Forest Classifier Model with regards to its F1 Score
+**Null Hypothesis**: The SVM Model will not outperform the Random Forest Classifier Model with regards to its F1 Score 
+**Alternative Hypothesis**: The SVM Model will outperform the Random Forest Classifier Model with regards to its F1 Score
 
-**Note**: The F1 score was the metric used to primarily evaluate the two models. To determine if the F1 scores are statistically significant, a **t-test** will be utilized. More information about this can be found in the "Why F1 Score" section below.
+**Note**: The F1 score was the metric used to primarily evaluate the two models. To determine if the F1 scores are statistically significant, a **Wilcoxon Rank-Sum Test** will be utilized. More information about this can be found in the "Why F1 Score" section below.
 
 # Why a Focus on F1 Score  
 ![Reference 3](f1.png)
@@ -140,7 +140,7 @@ After this step, we can verify that all of the variables are now factors by usin
 
 # Why Support Vector Machine and Random Forest Classifier  
 ```{r, message = FALSE, warnings = FALSE}
-llibrary(ggplot2)
+library(ggplot2)
 
 as.data.frame(count(df$h1n1_vaccine))
 count.data <- data.frame(
@@ -714,185 +714,6 @@ As shown above, the models all performed generally better across the board as we
 
 
 
-# Random Forest Model {.tabset}
-
-## Original Dataset Mtry
-```{r}
-mytry_tune <- function(x){
-  xx <- dim(x)[2]-1
-  sqrt(xx)
-}
-       
-mytry_tune(original_train)
-```
-Mtry represents the number of variables randomly samples as candidates at each split. Using the mtry_tune function, we find that we should run our initial RF model using mtry = 5.196152, meaning that at each split, five variables will be randomly sampled as candidates at each split.
-
-## Original Dataset Mtry
-```{r}
-library(randomForest)
-set.seed(03092000)
-
-#creating the forest
-original_random_forest <- randomForest(h1n1_vaccine ~., 
-                          data = original_train,
-                          ntree = 200, 
-                          mtry = 5,
-                          replace = TRUE,
-                          importance = TRUE)
-
-original_random_forest #view the forest results
-plot(original_random_forest) #plot of the forest results 
-```
-
-
-```{r}
-print(importance(original_random_forest, type = 2, scale = TRUE))  #gives the importance of each predictor 
-#all the metrics together,not scaled
-
-```
-A low Gini or a higher decrease in Gini means that a particular predictor variable plays a greater role in partitioning the data into the defined classes. Therefore, the attribute doctor_recc_h1n1 has the largest mean decrease, meaning it is the most important attribute. Second highest was the opinion_h1n1_risk variable. Lastly, third highest was the opinion_h1n1_vacc_effective variable.
-
-
-```{r}
-View(original_random_forest$err.rate)
-```
-
-
-
-## Original Random Forest Optimized 
-```{r}
-library(randomForest)
-set.seed(03092000)
-
-#creating the forest
-original_random_forest_optimized <- randomForest(h1n1_vaccine ~., 
-                          data = original_train,
-                          ntree = 133, 
-                          mtry = 5,
-                          replace = TRUE,
-                          importance = TRUE)
-
-original_random_forest_optimized #view the forest results
-plot(original_random_forest_optimized) #plot of the forest results 
-
-```
-
-## Comparison of Initial & New Models 
-```{r}
-original_random_forest$confusion
-original_random_forest_optimized$confusion
-census_RF_2_acc = sum(original_random_forest_optimized$confusion[row(original_random_forest_optimized$confusion) == 
-                                                col(original_random_forest_optimized$confusion)]) / 
-  sum(original_random_forest_optimized$confusion)
-
-census_RF_2_acc
-```
-
-
-## Prediction on Training Set 
-NOT WORKING 
-```{r}
-#census_predict = predict(original_random_forest_optimized,      #<- a randomForest model
-                    #     original_test,      #<- the test data set to use
-                    #     type = "response",   #<- what results to produce, see the help menu for the options
-                    #     predict.all = TRUE,  #<- should the predictions of all trees be kept?
-                     #    proximity = TRUE)    #<- should proximity measures be computed
-#View(census_predict)
-
-```
-
-## Assessment of Model Quality 
-NOT WORKING
-```{r}
-#census_test_pred = data.frame(census_test, 
-                         #        Prediction = census_predict$predicted$aggregate)
-
-# View(census_test_pred)
-
-library(caret)
-#confusionMatrix(census_test_pred$Prediction, census_test_pred$income,positive = "1", 
-     #           dnn=c("Prediction", "Actual"), mode = "everything")
-```
-
-
-## Original Random Forest Optimized - TESTING SET
-```{r}
-library(randomForest)
-set.seed(03092000)
-
-#creating the forest
-original_random_forest_testing <- randomForest(h1n1_vaccine ~., 
-                          data = original_test,
-                          ntree = 200, 
-                          mtry = 5,
-                          replace = TRUE,
-                          importance = TRUE)
-
-original_random_forest_testing #view the forest results
-plot(original_random_forest_testing) #plot of the forest results 
-
-```
-
-## One Hot Encoded Dataset Mtry
-```{r}
-mytry_tune <- function(x){
-  xx <- dim(x)[2]-1
-  sqrt(xx)
-}
-       
-mytry_tune(one)
-```
-Mtry represents the number of variables randomly samples as candidates at each split. Using the mtry_tune function, we find that we should run our initial RF model using mtry = 5.196152, meaning that at each split, five variables will be randomly sampled as candidates at each split.
-
-## Original Dataset Mtry
-```{r}
-library(randomForest)
-set.seed(03092000)
-
-#creating the forest
-original_random_forest <- randomForest(h1n1_vaccine ~., 
-                          data = df,
-                          ntree = 200, 
-                          mtry = 5,
-                          replace = TRUE,
-                          importance = TRUE)
-
-original_random_forest #view the forest results
-plot(original_random_forest) #plot of the forest results 
-```
-
-
-```{r}
-print(importance(original_random_forest, type = 2, scale = TRUE))  #gives the importance of each predictor 
-#all the metrics together,not scaled
-
-```
-A low Gini or a higher decrease in Gini means that a particular predictor variable plays a greater role in partitioning the data into the defined classes. Therefore, the attribute doctor_recc_h1n1 has the largest mean decrease, meaning it is the most important attribute. Second highest was the opinion_h1n1_risk variable. Lastly, third highest was the opinion_h1n1_vacc_effective variable.
-
-
-```{r}
-View(original_random_forest$err.rate)
-```
-
-
-
-## Original Random Forest Optimized 
-```{r}
-library(randomForest)
-set.seed(03092000)
-
-#creating the forest
-original_random_forest_optimized <- randomForest(h1n1_vaccine ~., 
-                          data = df,
-                          ntree = 177, 
-                          mtry = 5,
-                          replace = TRUE,
-                          importance = TRUE)
-
-original_random_forest_optimized #view the forest results
-plot(original_random_forest_optimized) #plot of the forest results 
-
-```
 
 
 # Summary of Random Forest Model Results 
@@ -911,7 +732,7 @@ RF_results = data.frame( Model_RF, Dataset_RF, F1Score_RF, Kappa_RF, Specificity
 kable(RF_results)
 
 ```
-The Aggregated Random Forest Model Results are shown above. The best performing model in terms of F1 Score was the original polynomial kernel. We want to select the tuned random forest for further exploration and use, due to the decrased computing burden necessary. This is because the tuned model utilized 188 trees, as opposed to the 200 trees utilized in the original random forest model, which only performed slightly better (F1 Score 0.0015 better). The tuned random forest, utilizing the original data, had an F1 Score of 0.8655. Noticeably, the feature reduced models performed relatively poorly. Tuning the feature reduced random forest had little to no effect across the board. 
+The Aggregated Random Forest Model Results are shown above. The best performing model in terms of F1 Score was the original random forest created on the full dataset. We want to select the tuned random forest for further exploration and use, due to the decrased computing burden necessary. This is because the tuned model utilized 188 trees, as opposed to the 200 trees utilized in the original random forest model, which only performed slightly better (F1 Score 0.0015 better). The tuned random forest, utilizing the original data, had an F1 Score of 0.8655. Noticeably, the feature reduced models performed relatively poorly. Tuning the feature reduced random forest had little to no effect across the board. 
 
 
 # Optimized SVM and Random Forest Model Sampling 
