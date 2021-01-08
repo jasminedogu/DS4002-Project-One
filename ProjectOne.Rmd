@@ -140,9 +140,32 @@ After this step, we can verify that all of the variables are now factors by usin
 
 # Why Support Vector Machine and Random Forest Classifier  
 ```{r, message = FALSE, warnings = FALSE}
-library(dplyr)
-library(tidyverse)
-pie( c( nrow(df %>% filter(h1n1_vaccine==0)), nrow(df %>% filter(h1n1_vaccine==1))), labels = c("Not Vaccinated, 77%", "Got Vaccinated, 23%"),border = "white", col= c("#015977", "#606DA2"), main = "Base Rate of H1N1 Vaccinations" )
+llibrary(ggplot2)
+
+as.data.frame(count(df$h1n1_vaccine))
+count.data <- data.frame(
+  class = c("Vaccinated", "Not Vaccinated"),
+  n = c(4517, 15139),
+  prop = c(23, 77)
+)
+
+mycols <- c("#e998ac","#01cfcc")
+# Add label position
+count.data <- count.data %>%
+  arrange(desc(class)) %>%
+  mutate(lab.ypos = cumsum(prop) - 0.5*prop)
+count.data
+
+x<- ggplot(count.data, aes(x = 2, y = prop, fill = class)) +
+  geom_bar(stat = "identity", color = "white") +
+  coord_polar(theta = "y", start = 0)+
+  geom_text(aes(y = lab.ypos, label = prop), color = "white")+
+  scale_fill_manual(values = mycols) +
+  theme_void()+
+  xlim(0.5, 2.5)
+
+#ggsave("test.png", bg = "transparent")
+x
 ```
 
 After a preliminary analysis of the data topology, our group decided to compare the SVM and Random Forest models. We were curious to how these two models would perform against one another due to the nature of the algorithms. Both are **supervised machine learning algorithms** which can be used for **classification** or **regression** analysis. For the purposes of our analysis, we will be using these algorithms to classify which group a person, given various features, is likely to belong to (vaccine/no vaccine). We selected these algorithms because they are both great for imbalanced datasets, which as we can see above, our dataset has a base rate of 23% for the group who received the vaccine; because our dataset is imbalanced, it is critical to utilize algorithms that can deal with it fairly well. Similarly, both of the algorithms reduce the risk of over-fitting in their own manner. This is also extremely important for our model as overfitting to the dataset can falsely skew the accuracy of the model.
