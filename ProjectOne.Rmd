@@ -297,16 +297,6 @@ hc2
 
 # Feature Selection {.tabset}
 
-## Corellogram 
-```{r, message = FALSE, warnings = FALSE}
-h1n1_correlation = ggcorr(df2, method = c("everything", "pearson"), title = "H1N1 Factors Correlogram")
-h1n1_correlation
-```
-
-A correlogram was utilized to inform and guide future efforts for feature selection. We aimed to identify variables weakly and strongly correlated to the target variable and then test model performance with & without those variables. As demonstrated above, none of the variables are particularly strongly correlated with whether someone relieved the h1n1 vaccination. However, the most correlated are **doctor recommendation**, **opinion about the risk of getting sick with the flu vaccine**, and their **opinion of whether or not the h1n1 vaccine was effective** with correlations of **0.13**, **0.11**, and **0.09** respectively.
-
-Because we determined that no variables were highly correlated, we will not have to remove any of the features and can move on to the LASSO Regression.
-
 ## LASSO Regression Model 
 
 ### Why LASSO Regression
@@ -414,8 +404,10 @@ varOfInterestFinal = varOfInterest[varOfInterest != "(Intercept)"]
 varOfInterestFinal
 
 varsOfInt = c('opinion_h1n1_risk', 'opinion_h1n1_vacc_effective', 'child_under_6_months', 'education', 'opinion_h1n1_sick_from_vacc', 'race', 'age_group', 'health_worker', 'doctor_recc_h1n1', 'h1n1_concern')
+
+kable(varsOfInt, col.names = "Most Contributing Variables")
 ```
-As can be seen above, there are 17 variables that we plan to utilize within our SVM model. This significant reduction of the feature space promotes sparsity and makes the model *"mean and lean"* as described by Professor Wright.
+As can be seen above, there are 10 distinct variables that we plan to utilize within our SVM model. In this model, we chose to remove all of the variables that had coefficients that had an absolute value of 0.03 or less (were non-contributing). We removed variables that did not have a single level appear within our coefficient plot. Conversely, we kept a variable if there was at least one level that exceeded the 0.03 (absolutle value) coefficient threshold that we set. This significant reduction of the feature space promotes sparsity and makes the model *"mean and lean"*. 
 
 
 #One-Hot Encoding 
@@ -431,26 +423,25 @@ df_onehot = as.data.frame(as.matrix(sparse.model.matrix(~. -1, data = df_varOfIn
 
 ```
 
-
 ```{r}
 
 names(df_onehot)[30] <- "h1n1_vaccine"
 
-#head(df_onehot)[,1:4]
+kable( head((df_onehot)[,1:4]) )
 
 ```
+We then proceeded one-hot encode the dataset, and reduced the feature space to only contain the 10 most important distint variables previously described.
 
 
 
-
-# Future Direction for Project
+# High-Level Modeling Approach 
 
 Utilizing both the polynomial kernel and the radial kernel, we will explore tuning the hyperparameters and comparing the performance of each as they both possessed similar RMSE values. We initially ran multiple kernels and selected the Polynomial Kernel due to its low RMSE of 0.401, with the Radial Kernel following close behind at an RSME of 0.417. However, because these kernel’s performed very similarly with regard to our loss function, we would still like to further assess both kernels.
 
-Following the execution of the SVM, we would like to proceed with the Random Forest and aim to tune the hyperparameters for optimal performance. Having tuned both of the models, the statistical significance of the resulting F1 Scores of each algorithm will be assessed for statistical significance with a t-test.
+Following the execution of the SVM, we would like to proceed with the Random Forest and aim to tune the hyperparameters for optimal performance. Having tuned both of the models, we will run the optimal SVM and Random Forest 10 times each. Then, the statistical significance of the resulting F1 Scores of each algorithm will be assessed for statistical significance with a Wilcoxon-Rank Sum Test. 
 
 
-# Creating the Training, Testing, and Validation Sets
+# Creating the Training and Training Sets
 ```{r}
 # Creating the Training, Testing, and Validation Sets
 
@@ -481,11 +472,11 @@ We chose a 70/30 split for our analysis, due to a variety of beneficial factors.
 # SVM Model {.tabset}
 
 
-## Creating the First Model - Polynomial Kernel 
+## Polynomial Kernel 
 ```{r}
 #install.packages('e1071') 
 library(e1071) 
-
+set.seed(03092000)
 classifier_original <- svm(formula = h1n1_vaccine ~ ., 
                  data = original_train, 
                  type = 'C-classification',  #Default
@@ -493,14 +484,14 @@ classifier_original <- svm(formula = h1n1_vaccine ~ .,
                  kernel = 'polynomial')  #The kernel used in training and predicting
 
 ```
-## Predicting the Test Set Results with Model
+
 ```{r}
 # Predicting the test set results 
 
 y_pred_original <- predict(classifier_original, newdata = original_test[-28]) 
 ```
 
-## Creating Confusion Matrix
+### Confusion Matrix Results
 ```{r}
 # Making a Confusion Matrix 
 #install.packages("caret")
@@ -514,15 +505,16 @@ The accuracy and sensitivity were good relative to the basis, at 0.78 and 0.81 r
 f1score_poly = 2*0.83766  *(129/(129+1235))/(0.83766   + (129/(1235+129)) )
 f1score_poly
 ```
-Our primary metric, the F1 Score, was calculated to be 0.169 - this is awful. Let's try it with the radial kernel. 
+Our primary metric, the F1 Score, was calculated to be 0.1699 - this is awful. Let's try it with the radial kernel. 
 
 
 
-## Creating the Second Model - Radial Kernel 
+## Radial Kernel 
+
 ```{r}
 #install.packages('e1071') 
 library(e1071) 
-
+set.seed(03092000)
 classifier_original2 <- svm(formula = h1n1_vaccine ~ ., 
                  data = original_train, 
                  type = 'C-classification',  #Default
@@ -530,14 +522,15 @@ classifier_original2 <- svm(formula = h1n1_vaccine ~ .,
                  kernel = 'radial')  #The kernel used in training and predicting
 
 ```
-## Predicting the Test Set Results with Model
+
+
 ```{r}
 # Predicting the test set results 
 
 y_pred_original2 <- predict(classifier_original2, newdata = original_test[-28]) 
 ```
 
-## Creating Confusion Matrix
+### Confusion Matrix Results
 ```{r}
 # Making a Confusion Matrix 
 #install.packages("caret")
@@ -545,17 +538,17 @@ library(caret)
 cm_original_radial <- confusionMatrix(original_test$h1n1_vaccine,y_pred_original2, positive = "1")
 cm_original_radial
 ```
-The overall accuracy improved some to 0.8326, while the false positive rate decreased from 0.2216 to 0.1546. While the model's predictive rate of the negative class decreased slightly, a 0.95 rate is still concerning. 
+The overall accuracy improved some to 0.8303, while the false positive rate decreased from 0.2216 to 0.15333.
 
 
 ```{r}
-f1score_radial = 2*0.7303*(306/(391+306))/(0.7303 + (306/(391+306)) )
+f1score_radial = 2*0.72716*(507/(780+509))/(0.72716 + (589/(780+589)) )
 f1score_radial
 ```
-However, our main metric, the *F1 Score*, is *0.5483*. This is a significant improvement from the the polynomial kernel!
+However, our main metric, the *F1 Score*, is *0.4942*. This is a significant improvement from the the polynomial kernel!
 Let's try with the reduced features!
 
-# SVM Model w/ Feature Reduction
+# Radial Kernel with Feature Reduction
 
 
 ## Creating the Model
@@ -572,8 +565,6 @@ classifier_onehot <- svm(formula = h1n1_vaccine ~ .,
 
 ```
 
-
-## Predicting the Test Set Results with Model
 ```{r}
 # Predicting the test set results 
 #head(df)
@@ -581,7 +572,7 @@ y_pred_onehot <- predict(classifier_onehot, newdata = onehot_test[-30])
 ```
 
 
-## Creating Confusion Matrix
+### Confusion Matrix Results
 ```{r}
 # Making a Confusion Matrix 
 #install.packages("caret")
@@ -598,11 +589,11 @@ f1score_radial_onehot = 2* 0.7302 *(644/(644+720))/( 0.7302  + (644/(644+720)) )
 f1score_radial_onehot
 
 ```
-With regard to our key metric, the *F1 Score* remained slgihtly increased from *0.5483* to *0.5734*. While much of the improvments may seem minute and trivial, the slight improvement of the model on the feature selected model is excellent news. As the model will be much less computationally expensive on the reduced feature space. This gives us hope that our new model will be a greater asset, as it is both leaner and meaner. 
+With regard to our key metric, the *F1 Score* remained slgihtly increased from *0.4942* to *0.5734*. While much of the improvments may seem minute and trivial, the slight improvement of the model on the feature selected model is excellent news. As the model will be much less computationally expensive on the reduced feature space. This gives us hope that our new model will be a greater asset, as it is both leaner and meaner. 
 
 Now, we will approach the SVM hyperparameter tuning. 
 
-
+## Hyperparameter Tuning Proccess 
 
 ```{r}
 
@@ -610,23 +601,29 @@ library(e1071)
 set.seed(03092000)
 
 obj <- tune(svm, h1n1_vaccine~., data = onehot_test, 
-            ranges = list(gamma = 10^(-2:3), 
-                          cost = 10^(-1:5)),
+            ranges = list(gamma = 2^(-1:1), 
+                          cost = 2^(2:4)),
             tunecontrol = tune.control(sampling = "fix"))
 summary(obj)
 
 ```
-The indicated optimal performance hyperparameters are gamma = 0.5 and cost = 16.
+The indicated optimal performance hyperparameters are gamma = 0.5 and cost = 8. 
+
+Something that we want to consider while the tuning cost and gamma is bias-variance tradeoff. 
+
+![SVM Optimization, Bias-Variance Tradeoff](SVM_Optimization.jpg)
+As shown above, larger cost and smaller gamma values result in high levels of variance and low levels of bias. This means that the model will be more receptive towards new, unseen data and does not care as much about fitting more to the data at hand. At the same time smaller cost and larger gamma values result in low variance and high bias. For our purposes, the optimized selection of C = 8 and Gamma = 0.5 leaves us with a small C and small gamma, balancing out the model in terms of the bias-variance tradeoff exhibited.
+
 
 
 ```{r}
 
 plot(obj)
 ```
-As can be see above, the optimal gamma is the strip near a gamma of 0.5 and the cost was 16!
+As can be seen above, the optimal gamma is a gamma of 0.5 and a cost was 8.
 
 
-## Running the Tuned SVM - Radial Kernel  
+## Radial Kernel with Feature Reduction & Tuning 
 ```{r}
 #install.packages('e1071') 
 library(e1071) 
@@ -642,15 +639,13 @@ classifier_onehot_tuned <- svm(formula = h1n1_vaccine ~ .,
 
 ```
 
-
-## Predicting the Test Set Results with Model
 ```{r}
 # Predicting the test set results 
 
 y_pred_onehot_tuned <- predict(classifier_onehot_tuned, newdata = onehot_test[-30]) 
 ```
 
-## Creating Confusion Matrix
+### Confusion Matrix Results
 ```{r}
 # Making a Confusion Matrix 
 #install.packages("caret")
@@ -673,11 +668,11 @@ The F1 Score improved to achieve an score of 0.664! In addition, the kappa value
 
 Model = c("Polynomial", "Radial", "Radial", "Tuned Radial")
 Dataset = c("Original", "Original", "Feature Reduced", "Feature Reduced")
-F1Score = c(0.1699, 0.5483, 0.5724, 0.6639)
-Kappa = c(0.1221, 0.4529, 0.4788, 0.5927)
-Specificity = c(0.7832, 0.8492, 0.8564, 0.8745)
-Sensitivity = c(0.8376, 0.7302, 0.7302, 0.8782)
-Accuracy = c(0.784, 0.8326, 0.8375, 0.875)
+F1Score = c(0.1699, 0.4942, 0.5724, 0.6639)
+Kappa = c(0.1221, 0.4448, 0.4788, 0.5927)
+Specificity = c(0.7832, 0.8467, 0.8564, 0.8745)
+Sensitivity = c(0.8376, 0.7271, 0.7302, 0.8782)
+Accuracy = c(0.784, 0.8303, 0.8375, 0.875)
 
 svm_results = data.frame( Model, Dataset, F1Score, Kappa, Specificity, Sensitivity, Accuracy)
 
@@ -686,7 +681,7 @@ kable(svm_results)
 
 
 ```
-
+As shown above, the models all performed generally better across the board as we continued to test. Relating to our primary metric F1 Score, our optimal F1 score was 0.6639, significantly increasing from the first model to the optimized final model. In addition, another metric we were observing due to the imbalanced nature of our data was the kappa value, which also drastically increased from the base model to the final model. 
 
 
 
