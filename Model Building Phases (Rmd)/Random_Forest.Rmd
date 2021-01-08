@@ -1,0 +1,236 @@
+---
+title: "Random_Forest"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+library(knitr)
+library(dplyr)
+library(ggplot2)
+library(plyr)
+library(mlbench)
+library(GGally)
+library(cowplot)
+library(mltools)
+library(randomForest)
+library(data.table)
+library(caret)
+set.seed(03092000)
+```
+
+#Random Forest Models {.tabset}
+
+```{r}
+load("DataPrep.RData")
+```
+Loading in the environment from the data preparation stage.
+
+After exploring the SVM models, we move onto the Random Forest models. Here, we will be building models for both the original dataset as well as the feature reduced dataset we obtained from our LASSO Regression. After creating a baseline for each of the datasets, we will be tuning the hyperparameters and then comparing the performances using various metrics. 
+
+## RFM on Original Dataset
+```{r}
+#finding a mtry value
+mytry_tune <- function(x){
+  xx <- dim(x)[2]-1
+  sqrt(xx)
+}
+       
+mytry_tune(original_train)
+```
+Mtry represents the number of variables randomly samples as candidates at each split. Using the mtry_tune function, we find that we should run our initial RF model using mtry = 5.196152, meaning that at each split, five variables will be randomly sampled as candidates at each split.
+
+### Basline Model
+```{r}
+#creating initial random forest model with default param (original df)
+model <- randomForest(
+         h1n1_vaccine ~ ., 
+         data = original_train,
+         ntree = 200,  #due to the computational power we have access to, we will limit ntree to 200
+         mtry = 5,
+         importance = TRUE)
+model
+
+#plot(model)
+```
+Here, we are creating our baseline model. With the random forest model, there are two hyperparameters that can be tuned. These include the ntree and mtry values. The typical default of the ntree value (number of trees) for the initial random forest model is 500. However, due to the lack of computational power, our group was only able to utilize a max ntree value of 200. In the future, utilizing a random or grid search could be beneficial to determining a better baseline ntree value to start with, which could help optimize the performance of the model.
+
+Here, we can see that our out-of-bag estimation of the error rate is 17.42%. We proceed with fine tuning the parameters of this model.
+
+### Analyzing OOB
+```{r}
+#fine tuning the parameters of the random forest model 
+#View(model$err.rate)
+```
+For our model, we want to utilize the least number of trees while minimizing our OOB value. Therefore, looking at the error rates, we can see that this is done best at a ntree value of 188.  
+
+### Tuning Baseline Model
+```{r}
+# Fine tuning parameters of Random Forest model
+model2 <- randomForest(
+          h1n1_vaccine ~ ., #dependent condition
+          data = original_train,
+          ntree = 188, #new ntree value
+          mtry = 5, #mtry value found earlier using mtry_tune function
+          importance = TRUE)
+model2
+#plot(model2)
+```
+After fine tuning the parameters of the Random Forest model by utilizing a ntree value of 188 and a mtry value of 5, the out-of-bag error estimate rate was 17.46%. This is a 0.04% increase from the error rate of the un-optimized model. However, compared to the 200 trees that the un-optimized model utilized, this uses 188 trees. Therefore, while there was a slight increase in the error rate, there was still a significant decrease in the number of trees required for the model to perform at a similar error rate. Having a more simple model can be beneficial in terms of the runtime and computational expenses. 
+
+### Testing Both Models
+```{r}
+# predicting on train set
+predTrain <- predict(model2, original_train, type = "class")
+
+# untuned model
+# creating confusion matrix for prediction on test set (for original dataset)
+predTest1<- predict(model, original_test, type = "class")
+cm1 <- confusionMatrix(original_test$h1n1_vaccine,predTest1, positive = "1")
+cm1
+
+# tuned Model
+# creating confusion matrix for prediction on test set (for original dataset)
+predTest<- predict(model2, original_test, type = "class")
+cm <- confusionMatrix(original_test$h1n1_vaccine,predTest, positive = "1")
+cm
+```
+The untuned and tuned models that were tested on the testing set are shown above. The various metrics for their performance are displayed above but will also be displayed towards the end of the Random Forest Classifier section in a table format. It is important to note that the untuned model performed slightly better than the tuned model with regards to the F1 score, Accuracy, Specificity, Sensitivity, and Kappa values. It is also critical to keep in mind that the two main factors that lead to overfitting in the random forests models are a lower ntree value and higher feature number. 
+
+We proceed with building and testing a model on the reduced feature dataset that was obtained from the LASSO Regression analysis. The hope is that by using the reduced feature dataset, there will be less overfitting of the model to the data.
+
+### Important Variables in Tuned Model
+```{r}
+# checking for important variables in our tuned model
+x<-  as.data.frame(importance(model2))
+newdata <- x[order(-x$MeanDecreaseAccuracy, -x$MeanDecreaseGini),]
+print(newdata,10)
+```
+
+```{r}
+varImpPlot(model2)  #shows the drop in mean accuracy for each of the variables
+```
+Looking at the importance of the variables, its critical to consider the mean decrease accuracy and the mean decrease gini. The mean decrease accuracy tells us how much accuracy the model loses by excluding certain features; therefore, the higher this value is the more important the variable is for the classification of the model. On the other hand, the mean decrease gini tells us how much of a role a certain predictor variable plays in the partitioning of the data; therefore, the higher the mean decrease gini value of a variable, the more important it is for the classification of the model.
+
+We can see that doctor_recc_h1n1, opinion_h1n1_risk, and opinion_h1n1_vacc_effective (in that particular order) are the highest values for both the mean decrease accuracy and the mean decrease gini.
+
+## RMF on Reduced Features Dataset
+```{r}
+#finding a mtry value
+mytry_tune(onehot_train)
+```
+Using the mtry_tune function, we find that we should run our initial RF model using mtry = 5.385165, meaning that at each split, six variables will be randomly sampled as candidates at each split.
+
+### Basline Model
+```{r}
+#load("RandomForest_Original.RData")
+set.seed(03092000)
+
+#creating initial random forest model with default param (onehot df)
+names(onehot_train)[names(onehot_train) == "education12 Years"] <- "education12Years"
+names(onehot_train)[names(onehot_train) == "educationCollege Graduate"] <- "educationCollegeGraduate"
+names(onehot_train)[names(onehot_train) == "educationSome College"] <- "educationSomeCollege"
+names(onehot_train)[names(onehot_train) == "raceOther or Multiple"] <- "raceOtherorMultiple"
+names(onehot_train)[names(onehot_train) == "age_group35 - 44 Years"] <- "age_group35_44Years"
+names(onehot_train)[names(onehot_train) == "age_group45 - 54 Years"] <- "age_group45_54Years"
+names(onehot_train)[names(onehot_train) == "age_group55 - 64 Years"] <- "age_group55_64Years"
+names(onehot_train)[names(onehot_train) == "age_group65+ Years"] <- "age_group65andUpYears"
+
+names(onehot_test)[names(onehot_test) == "education12 Years"] <- "education12Years"
+names(onehot_test)[names(onehot_test) == "educationCollege Graduate"] <- "educationCollegeGraduate"
+names(onehot_test)[names(onehot_test) == "educationSome College"] <- "educationSomeCollege"
+names(onehot_test)[names(onehot_test) == "raceOther or Multiple"] <- "raceOtherorMultiple"
+names(onehot_test)[names(onehot_test) == "age_group35 - 44 Years"] <- "age_group35_44Years"
+names(onehot_test)[names(onehot_test) == "age_group45 - 54 Years"] <- "age_group45_54Years"
+names(onehot_test)[names(onehot_test) == "age_group55 - 64 Years"] <- "age_group55_64Years"
+names(onehot_test)[names(onehot_test) == "age_group65+ Years"] <- "age_group65andUpYears"
+
+onehot_train[,] <- lapply(onehot_train[,], factor)  ## as.factor() could also be used
+onehot_test[,] <- lapply(onehot_test[,], factor)  ## as.factor() could also be used
+
+#str(onehot_train)
+model_oh <- randomForest(
+         h1n1_vaccine ~ ., 
+         data = onehot_train,
+         ntree = 200,  #due to the computational power we have access to, we will limit ntree to 200
+         mtry = 6,
+         importance = TRUE)
+model_oh
+#plot(model_oh)
+```
+Our one-hot encoded dataset required some cleaning in terms of the column names. Spaces and unrecognized characters were taken out of some of the variables to avoid complications later. As mentioned previously, the typical default of the ntree value (number of trees) for the initial random forest model is 500. However, due to the lack of computational power, our group was only able to utilize a max ntree value of 200. 
+
+Here, we can see that our out-of-bag estimation of the error rate is 17.97%. We proceed with fine tuning the parameters of this model.
+
+### Analyzing OOB
+```{r}
+#fine tuning the parameters of the random forest model 
+#View(model_oh$err.rate)
+```
+For our model, we want to utilize the least number of trees while minimizing our OOB value. Therefore, looking at the error rates, we can see that this is done best at a ntree value of 104.  
+
+### Tuning Baseline Model
+```{r}
+set.seed(03092000)
+# Fine tuning parameters of Random Forest model
+model_oh2 <- randomForest(
+          h1n1_vaccine ~ ., #dependent condition
+          data = onehot_train,
+          ntree =104 ,
+          mtry = 6, #mtry value found earlier using mtry_tune function
+          importance = TRUE)
+model_oh2
+#colnames(df_onehot)
+#plot(model_oh2)
+```
+After fine tuning the parameters of the Random Forest model by utilizing a ntree value of 104 and a mtry value of 6, the out-of-bag error estimate rate was 18.06%. However, compared to the 200 trees that the un-optimized model utilized, this uses 104 trees. Therefore, while there was a slight increase in the error rate, there was still a significant decrease in the number of trees required for the model to perform at a similar error rate.
+
+### Testing on Both Models
+```{r}
+# predicting on testing set (not tuned model)
+predTest3<- predict(model_oh, onehot_test, type = "class")
+cm3 <- confusionMatrix(original_test$h1n1_vaccine,predTest3, positive = "1")
+cm3
+# predicting on testing set (tuned model)
+predTest4<- predict(model_oh2, onehot_test, type = "class")
+cm4 <- confusionMatrix(original_test$h1n1_vaccine,predTest4, positive = "1")
+cm4
+```
+
+The metrics from the tuned and untuned versions of the Random Forest model for the feature reduced dataset can be seen here. As with the models using the original dataset, these metrics will be depicted at the end of the Random Forest models section in a table to help with readability. 
+
+It is important to note that both the tuned and untuned models using the feature reduced datasets performed significantly worse than the tuned and untuned models using the original dataset. There was approximately an 8% drop in the accuracy rate and an 0.20 drop in the F1 score. However, while there was a drop in performance, this could mean that there is also less overfitting as well. We would expect these models to be more resistant to overfitting to the dataset since they have a lower feature count.
+
+### Important Variables in Tuned Model
+```{r}
+# checking for important variables in our tuned model
+x2<-  as.data.frame(importance(model_oh2))
+newdata2 <- x2[order(-x2$MeanDecreaseAccuracy, -x$MeanDecreaseGini),]
+print(newdata,10)
+```
+
+```{r}
+varImpPlot(model_oh2)  #shows the drop in mean accuracy for each of the variables
+```
+We can see that doctor_recc_h1n1, health_worker1, and opinion_h1n1_vacc_effective5 (in that particular order) are the highest values for both the mean decrease accuracy and the mean decrease gini.
+
+## Metrics- Chart
+```{r}
+Model = c("Untuned Random Forest", "Tuned Random Forest", "Untuned Random Forest", "Tuned Random Forest")
+Dataset = c("Original", "Original", "Feature Reduced", "Feature Reduced")
+F1Score = c(0.8670,0.8655,0.6646,0.6649)
+Kappa = c(0.8303,0.8285,0.5860,0.5862)
+Specificity = c(0.9453,0.9444,0.8790,0.8791)
+Sensitivity = c(0.9298,0.9310,0.8122,0.8116)
+Accuracy = c(0.9422,0.9417,0.8682,0.8682)
+rf_results = data.frame( Model, Dataset, F1Score, Kappa, Specificity, Sensitivity, Accuracy)
+kable(rf_results)
+```
+
+
+## Conclusion
+Our group analyzed four variations of the Random forest models. There was the untuned and tuned models using the original dataset, and the untuned and tuned models using the feature reduced dataset (obtained by the LASSO Regression). This can be seen above in the chart displaying the metrics.
+
+In terms of the F1, Kappa, Sensitivity, Specificity, and Accuracy scores, the model that performed the best was the untuned Random Forest model on the original dataset. This model had a F1 score of 0.8670 and an accuracy of 0.9422. However, our group decided to select the tuned model on the original dataset as our "optimal" performing Random Forest model. This model had a F1 score of 0.8655 and an accuracy of 0.9417. Although looking at the performance metrics, the tuned model of the original dataset did slightly worse than the untuned model of the original dataset, our group decided to make this selection due to the level of ntree's that the tuned model had. It had an ntree value of 188, which compared to the baseline model's ntree value of 200 was significantly lower; with a lower ntree, this means that we selected a less complex, more simple model which can help with the run time of the model. Therefore, although there was a slight trade-off between performance and complexity, the tuned model (using the original data) was selected as the optimal Random Forest model.
+
+Next, we will be comparing the tuned model (using the original data) to the best performing SVM model to answer our original hypotheses.
