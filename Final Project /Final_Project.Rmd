@@ -930,13 +930,11 @@ kable(Comp_results,  col.names = `Model Type`)
 The optimal SVM and Random Forest Models identified earlier were run ten different times, having removed the seed. These results will now be fed into the Wilcoxon Rank-Sum Test for significance.
 
 #Wilcoxon Rank-Sum Test
+We utilized a Wilcoxon Rank Sum Test as it is a non-parametric test that does not assume the sample has a known distribution, which works for our data as we would only be dealing with 10 data points each. This test is also robust to small sample size, which was critical as our sample size was only 10 due to the computational space and run-time our models took up. We were unable to run the SVM and Random Forest model more than 10 times as this maxed out our RAM and Project Time on R Studio Cloud. The main assumption of a Wilcoxon Rank Sum Test is having two indpendent samples, which was satisfied.
 
-We decided not to do a T-Test as originally planned, as we realized that we needed to have a *non-parametric test*. The Wilcoxon Rank Sum Test is best for this, as it acts as a non-parametric version of the Two-Sample T-Test. The test does not assume that the data has a known distribution, which works for our data as we would only be dealing with 10 data points each. Working well with a small sample size is another benefit of the Wilcoxon Rank-Sum Test, which is another reason we chose it. In addition, our program wouldn’t have ran more than 10 as a sample size, as we had space constraints.
+Results: After conducting the Wilcoxon Rank-Sum Test for the Tuned Radial SVM (feature selected) and Tuned Random Forest (original data) models, we noted some important results. Our statistical testing included a **Z-value of -2.8031** and a **P-value of .00512**. Because our p-value was smaller than our significance level of 0.05, we reject the null hypothesis. The results are statistically significant at p<0.05.
 
-Results - After conducting the Wilcoxon Rank-Sum Test for the Tuned Radial SVM and Tuned Random Forest models, we noted some important results. Our statistical testing included a Z-value of -2.8031 and a *P-value of .00512*. Testing at a significance level of 0.05, this allowed us to confirm the rejection of our Null Hypothesis. 
-
-*The SVM Polynomial Kernel will not perform differently than the Random Forest Classifier Model with regards to its F1 Score.*
-
+**This means that the difference between the SVM model and the Random Forest model in regards to its F1 score is not due to chance alone.**
 
 # Value and Future Work 
 
