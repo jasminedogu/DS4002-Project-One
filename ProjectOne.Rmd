@@ -326,7 +326,6 @@ hc2
 
 Initially, we want to utilize lasso regression to reduce the feature space. LASSO regression is an analysis method that utilizes both variable selection and regularization to further enhance the predictive accuracy and interpretability. It imposes a constraint on the model parameters that causes the regression coefficients for some of the variables to shrink towards zero.
 
-### Preparing the Data
 ```{r}
 set.seed(03092000)
 library(mltools)
@@ -407,7 +406,7 @@ coeff2dt(fitobject = cv.fit, s = "lambda.min") %>% head(30)
 #threshold - block method (prop.) 
 ```
 
-# Creating a Lasso Coefficient Plot
+### Creating a Lasso Coefficient Plot
 ```{r}
 coeffs.table <- coeff2dt(fitobject = cv.fit, s = "lambda.min")
 ggplot(data = coeffs.table) +
@@ -418,7 +417,7 @@ ggplot(data = coeffs.table) +
         legend.position = "none") 
 ```
 
-#Isolate Variables of Interest 
+### Isolate Variables of Interest 
 ```{r}
 varOfInterestPos = coeff2dt(fitobject = cv.fit, s = "lambda.min") %>% filter(coefficient >= 0.03)
 varOfInterestNeg = coeff2dt(fitobject = cv.fit, s = "lambda.min") %>% filter(coefficient <= -0.03)
@@ -433,7 +432,7 @@ kable(varsOfInt, col.names = "Most Contributing Variables")
 As can be seen above, there are 10 distinct variables that we plan to utilize within our SVM model. In this model, we chose to remove all of the variables that had coefficients that had an absolute value of 0.03 or less (were non-contributing). We removed variables that did not have a single level appear within our coefficient plot. Conversely, we kept a variable if there was at least one level that exceeded the 0.03 (absolutle value) coefficient threshold that we set. This significant reduction of the feature space promotes sparsity and makes the model *"mean and lean"*. 
 
 
-#One-Hot Encoding 
+# One-Hot Encoding 
 ```{r}
 library(mltools)
 library(Matrix)
@@ -464,7 +463,7 @@ Utilizing both the polynomial kernel and the radial kernel, we will explore tuni
 Following the execution of the SVM, we would like to proceed with the Random Forest and aim to tune the hyperparameters for optimal performance. Having tuned both of the models, we will run the optimal SVM and Random Forest 10 times each. Then, the statistical significance of the resulting F1 Scores of each algorithm will be assessed for statistical significance with a Wilcoxon-Rank Sum Test. 
 
 
-# Creating the Training and Training Sets
+# Data Partitioning
 ```{r}
 # Creating the Training, Testing, and Validation Sets
 
@@ -568,13 +567,14 @@ The overall accuracy improved some to 0.8303, while the false positive rate decr
 f1score_radial = 2*0.72716*(507/(780+509))/(0.72716 + (589/(780+589)) )
 f1score_radial
 ```
+
+
 However, our main metric, the *F1 Score*, is *0.4942*. This is a significant improvement from the the polynomial kernel!
 Let's try with the reduced features!
 
-# Radial Kernel with Feature Reduction
+## Radial Kernel with Feature Reduction
 
 
-## Creating the Model
 ```{r}
 #install.packages('e1071') 
 library(e1071) 
@@ -612,6 +612,8 @@ f1score_radial_onehot = 2* 0.7302 *(644/(644+720))/( 0.7302  + (644/(644+720)) )
 f1score_radial_onehot
 
 ```
+
+
 With regard to our key metric, the *F1 Score* remained slgihtly increased from *0.4942* to *0.5734*. While much of the improvments may seem minute and trivial, the slight improvement of the model on the feature selected model is excellent news. As the model will be much less computationally expensive on the reduced feature space. This gives us hope that our new model will be a greater asset, as it is both leaner and meaner. 
 
 Now, we will approach the SVM hyperparameter tuning. 
@@ -630,11 +632,13 @@ obj <- tune(svm, h1n1_vaccine~., data = onehot_test,
 summary(obj)
 
 ```
+
 The indicated optimal performance hyperparameters are gamma = 0.5 and cost = 8. 
 
 Something that we want to consider while the tuning cost and gamma is bias-variance tradeoff. 
 
 ![SVM Optimization, Bias-Variance Tradeoff](SVM_Optimization.jpg)
+
 As shown above, larger cost and smaller gamma values result in high levels of variance and low levels of bias. This means that the model will be more receptive towards new, unseen data and does not care as much about fitting more to the data at hand. At the same time smaller cost and larger gamma values result in low variance and high bias. For our purposes, the optimized selection of C = 8 and Gamma = 0.5 leaves us with a small C and small gamma, balancing out the model in terms of the bias-variance tradeoff exhibited.
 
 
@@ -643,7 +647,9 @@ As shown above, larger cost and smaller gamma values result in high levels of va
 
 plot(obj)
 ```
-As can be seen above, the optimal gamma is a gamma of 0.5 and a cost was 8.
+
+
+#As can be seen above, the optimal gamma is a gamma of 0.5 and a cost was 8.
 
 
 ## Radial Kernel with Feature Reduction & Tuning 
@@ -686,7 +692,7 @@ f1score_radial_onehot
 The F1 Score improved to achieve an score of 0.664! In addition, the kappa value (useful in scenarios like ours with unbalanced data), also improved to 0.5927, up from the pre-tuned model which had a Kappa value of 0.4788.
 
 
-#Comparative Modeling Assessment - Support Vector Machine  
+# Summary of SVM Results 
 ```{r}
 
 Model = c("Polynomial", "Radial", "Radial", "Tuned Radial")
@@ -921,14 +927,20 @@ Comp_results = data.frame( svm_f1, rf_f1)
 
 kable(Comp_results,  col.names = `Model Type`)
 ```
-The optimal SVM and Random Forest Models identified earlier were run ten different times, having removed the seed. These results will then be fed into the Wilcoxon Rank-Sum Test. 
+The optimal SVM and Random Forest Models identified earlier were run ten different times, having removed the seed. These results will now be fed into the Wilcoxon Rank-Sum Test for significance.
+
+#Wilcoxon Rank-Sum Test
+
+We decided not to do a T-Test as originally planned, as we realized that we needed to have a *non-parametric test*. The Wilcoxon Rank Sum Test is best for this, as it acts as a non-parametric version of the Two-Sample T-Test. The test does not assume that the data has a known distribution, which works for our data as we would only be dealing with 10 data points each. Working well with a small sample size is another benefit of the Wilcoxon Rank-Sum Test, which is another reason we chose it. In addition, our program wouldn’t have ran more than 10 as a sample size, as we had space constraints.
+
+Results - After conducting the Wilcoxon Rank-Sum Test for the Tuned Radial SVM and Tuned Random Forest models, we noted some important results. Our statistical testing included a Z-value of -2.8031 and a *P-value of .00512*. Testing at a significance level of 0.05, this allowed us to confirm the rejection of our Null Hypothesis. 
+
+*The SVM Polynomial Kernel will not perform differently than the Random Forest Classifier Model with regards to its F1 Score.*
 
 
+# Value and Future Work 
 
-
-# Research and Model Limitations
-
-# Future Analysis
+## Future Analysis
 This study primarily focused on developing the best classification model to predict whether a person would receive the H1N1 vaccination or not. However, there are multiple directions that future analysis could go. Below, our group has highlighted the top three future analysis studies we believe would be the strongest and most interesting.
 
 1. This research project focused on specifically the H1N1 (or Swine) Flu epidemic. For future analysis, completing a similar analysis on data collected from other pandemics and epidemics could be critical. A similar analysis could be especially useful when conducting a model build with similar data points and types (such as binary or factor), as well as with similar imbalances in the data. By building models and exploring the topology of the datasets, the data scientist may be able to gain some insight as to what factors make a person more likely to get vaccinated during, or after, a pandemic. They could also use the data to try to predict if a person would get vaccinated in the event of a future pandemic. This is especially important to understand given the current state of the world in regards to the COVID-19 pandemic. It is imperative to note, however, that the COVID-19 pandemic may be somewhat of an “outlier” case. Issues and ideas regarding the vaccine, and even the virus in general, have been hyper-politicized. While the data we examined does not factor into effect political affiliation, that variable would be an important aspect when conducting an analysis on COVID-19. In the future as new viruses emerge, having a clear understanding of the factors that contribute to an individual getting a vaccination will become increasingly important.
@@ -938,6 +950,27 @@ More information regarding the hyper-politicization of the COVID-19 pandemic and
 2. Another approach to a future analysis comes in the form of including the seasonal_vaccine variable, and the other seasonal-specific variables that we originally eliminated from our analysis. We originally didn’t include the seasonal data, as to focus on just H1N1 and how we could predict vaccinations from a “new virus” standpoint. By taking an alternative approach by including both seasonal and H1N1 data, we could examine and model trends between the two vaccines - such as specific demographics that showed opposing views between both vaccines, opinions regarding risks associated between the two viruses/vaccines, etc. This could help give us a better idea as to how people react differently when presented with an unusual and abnormal epidemic, in comparison to the yearly virus that they are all used to. We could also take the data from this different approach and use it as inference into how people may view the COVID-19 pandemic and vaccine. In addition, these varying data and trends between the seasonal and H1N1 data could give health officials ideas in regards to running vaccination campaigns. The data would give us insight into certain groups of people who may see their risk from seasonal to the H1N1 flu to be lesser, and could target these groups for public health and vaccination resources to increase vaccination rates and boost public opinion and knowledge.
 
 3. Lastly, another approach could give us incredible insight regarding some of the variables that we were unable to decode. We were unable to decode the anonymous-code-ids from the hhs_geo_region, employment_industry, and employment_occupation features. In a perfect world, we would have the information regarding how to decode these ids and could use the information in an analysis. These data may be beneficial in building a model that more accurately predicts if someone would get the vaccine, or not. For example, geographical region could have a lot to do with a person’s views on the vaccine - whether that be political, access to health resources, number of virus cases in the area, etc. Occupation and employment industry information may also be important, as some workers in certain sectors may feel that they are at more risk to the virus than others, thus wanting the vaccine.
+
+## Value - Potential Use Case:
+
+A Government-based Targeted Marketing Campaign to Encourage Individuals to get Vaccinated.
+
+To utilize potential opportunities from our model results, we decided to create an idea of how the government could save money using the results of our model to target specific individuals in marketing campaigns for the vaccine. 
+
+*Our assumptions are as follows*: 
+    - Outreach of 500,000 people each week
+    - Average revenue from the H1N1 vaccine of $20
+    - Expenditure of $50 in marketing to convince those we predict to not want the vaccine
+    - Expenditure of $5 in marketing of vaccine-related resources to those we predict to want the vaccine
+    - The population sampled in the original data survey was reflective of the US population.
+
+Using the the optimal Tuned Random Forest Model, we utilized its confusion matrix, alongside a population matrix and a cost matrix to calculate the cost savings relative to the status quo (no model). 
+
+![Cost Savings Assessment in Potential Use Case](Cost_Assessment_4002_Project1.jpg)
+
+According to our Random Forest Model and the marketing assumptions, the government would save an estimated $2,570,170 each week through targeted marketing campaigns.
+
+
 
 
 # References
