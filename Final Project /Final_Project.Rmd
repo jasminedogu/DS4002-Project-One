@@ -76,8 +76,8 @@ Before getting into the details of why the SVM and Random Forest models were sel
 
 ## Reading in the Dataset
 ```{r, include=FALSE}
-df_features <- read.csv("training_set_features.csv")
-df_label <- read.csv("training_set_labels.csv")
+df_features <- read.csv("Datasets/training_set_features.csv")
+df_label <- read.csv("Datasets/training_set_labels.csv")
 df <- merge(df_features,df_label,by="respondent_id")
 #head(df)
 #sum(nrow(df))
@@ -123,7 +123,7 @@ Lastly, we removed the respondent_id at this step. This variable was important w
 df <- df[, -which(names(df) %in% c("employment_occupation","health_insurance","employment_industry", "hhs_geo_region", "respondent_id"))]
 df<- na.omit(df)
 #write.csv(df,"df2.csv", row.names = TRUE) #saving to a new csv file
-df2<- read.csv("df2.csv")  
+df2<- read.csv("Datasets/df2.csv")  
 nrow(df)
 ```
 Here, along with removing the top 3 columns with the highest number of NA's, we also removed the hhs_geo_region variable for reasons mentioned above. We are left with 19,656 observations. Because this is still a significant portion of the original number of observations the dataset had (approximately 73.6%), we proceed with our analysis.
@@ -798,3 +798,7 @@ According to our Random Forest Model and the marketing assumptions, the governme
 1. <ftp://ftp.cdc.gov/pub/Health_Statistics/NCHS/Dataset_Documentation/NIS/nhfs/nhfspuf_DUG.PDF>
 2. <https://www.cdc.gov/h1n1flu/surveillanceqa.htm>
 3. <https://towardsdatascience.com/simplifying-precision-recall-and-other-evaluation-metrics-d066b527c6bb>
+4. <https://towardsdatascience.com/support-vector-machine-simply-explained-fee28eba5496>
+5. <https://towardsdatascience.com/a-guide-to-svm-parameter-tuning-8bfe6b8a452c>
+6. <https://medium.com/analytics-vidhya/machine-learning-decision-trees-and-random-forest-classifiers-81422887a544>
+7. <https://towardsdatascience.com/what-is-out-of-bag-oob-score-in-random-forest-a7fa23d710>
