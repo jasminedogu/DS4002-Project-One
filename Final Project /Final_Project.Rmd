@@ -977,3 +977,7 @@ According to our Random Forest Model and the marketing assumptions, the governme
 1. <ftp://ftp.cdc.gov/pub/Health_Statistics/NCHS/Dataset_Documentation/NIS/nhfs/nhfspuf_DUG.PDF>
 2. <https://www.cdc.gov/h1n1flu/surveillanceqa.htm>
 3. <https://towardsdatascience.com/simplifying-precision-recall-and-other-evaluation-metrics-d066b527c6bb>
+4. <https://towardsdatascience.com/support-vector-machine-simply-explained-fee28eba5496>
+5. <https://towardsdatascience.com/a-guide-to-svm-parameter-tuning-8bfe6b8a452c>
+6. <https://medium.com/analytics-vidhya/machine-learning-decision-trees-and-random-forest-classifiers-81422887a544>
+7. <https://towardsdatascience.com/what-is-out-of-bag-oob-score-in-random-forest-a7fa23d710>
