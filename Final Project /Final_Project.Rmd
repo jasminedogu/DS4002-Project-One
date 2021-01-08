@@ -38,7 +38,8 @@ We will first begin by explaining some background information on the H1N1 virus,
 **Note**: The F1 score was the metric used to primarily evaluate the two models. To determine if the F1 scores are statistically significant, a **Wilcoxon Rank-Sum Test** will be utilized. More information about this can be found in the "Why F1 Score" section below.
 
 # Why a Focus on F1 Score  
-![Reference 3](/cloud/project/f1.png)
+
+![Reference 3](/cloud/project/Photos/f1.png)
 
 Throughout our project, we will be looking at multiple metrics to evaluate the performance of the SVM and Random Forest models. These include **accuracy, precision (specificity), and recall (sensitivity)**. While all of these metrics will play a role in how we tune the models' parameter and determine which model is more successful, to answer our question of which model outperforms the other we will be looking at the **F1 value**. 
 
@@ -637,7 +638,7 @@ The indicated optimal performance hyperparameters are gamma = 0.5 and cost = 8.
 
 Something that we want to consider while the tuning cost and gamma is bias-variance tradeoff. 
 
-![SVM Optimization, Bias-Variance Tradeoff](/cloud/project/SVM_Optimization.jpg)
+![SVM Optimization, Bias-Variance Tradeoff](/cloud/project/Photos/SVM_Optimization.jpg)
 
 As shown above, larger cost and smaller gamma values result in high levels of variance and low levels of bias. This means that the model will be more receptive towards new, unseen data and does not care as much about fitting more to the data at hand. At the same time smaller cost and larger gamma values result in low variance and high bias. For our purposes, the optimized selection of C = 8 and Gamma = 0.5 leaves us with a small C and small gamma, balancing out the model in terms of the bias-variance tradeoff exhibited.
 
@@ -785,7 +786,7 @@ To utilize potential opportunities from our model results, we decided to create 
 
 Using the the optimal Tuned Random Forest Model, we utilized its confusion matrix, alongside a population matrix and a cost matrix to calculate the cost savings relative to the status quo (no model). 
 
-![Cost Savings Assessment in Potential Use Case](/cloud/project/Cost_Assessment_4002_Project1.jpg)
+![Cost Savings Assessment in Potential Use Case](/cloud/project/Photos/Cost_Assessment_4002_Project1.jpg)
 
 According to our Random Forest Model and the marketing assumptions, the government would save an estimated $2,570,170 each week through targeted marketing campaigns.
 

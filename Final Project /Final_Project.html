@@ -11,7 +11,7 @@
 
 <meta name="author" content="Jasmine Dogu, Brian Wimmer, Christos Chen - Group 3" />
 
-<meta name="date" content="2021-01-04" />
+<meta name="date" content="2021-01-08" />
 
 <title>Project-One-Group-3</title>
 
@@ -1546,7 +1546,7 @@ div.tocify {
 
 <h1 class="title toc-ignore">Project-One-Group-3</h1>
 <h4 class="author">Jasmine Dogu, Brian Wimmer, Christos Chen - Group 3</h4>
-<h4 class="date">01/04/2021</h4>
+<h4 class="date">01/08/2021</h4>
 
 </div>
 
@@ -1555,7 +1555,7 @@ div.tocify {
 <h1>Research Question and Hypotheses</h1>
 <p><strong>Goal</strong>: Through this project, our group hopes to utilize both the <strong>Support Vector Machine</strong> (SVM) and <strong>Random Forest Classifier</strong> models to predict whether a person is or is not going to get the H1N1 vaccine. These two algorithms were selected for the reasons that are provided below in the “Why Support Vector Machine and Random Forest Classifier” section.</p>
 <p>We will first begin by explaining some background information on the H1N1 virus, the dataset, and the two machine learning algorithms. From there, we will proceed with the model creation and the parameter tuning. Lastly, we will draw conclusions from our findings and discuss future applications.</p>
-<p><strong>General Question</strong>: Will the SVM or the Random Forest Model Predict the Likelihood of a Person Getting the H1N1 Vaccine Better?</p>
+<p><strong>General Question</strong>: Will the SVM Model or the Random Forest Model Predict the Likelihood of a Person Getting the H1N1 Vaccine Better?</p>
 <p><strong>Null Hypothesis</strong>: The SVM Model will not outperform the Random Forest Classifier Model with regards to its F1 Score <strong>Alternative Hypothesis</strong>: The SVM Model will outperform the Random Forest Classifier Model with regards to its F1 Score</p>
 <p><strong>Note</strong>: The F1 score was the metric used to primarily evaluate the two models. To determine if the F1 scores are statistically significant, a <strong>Wilcoxon Rank-Sum Test</strong> will be utilized. More information about this can be found in the “Why F1 Score” section below.</p>
 </div>
@@ -1619,69 +1619,6 @@ div.tocify {
 </div>
 <div id="removing-the-seasonal-flu-columns" class="section level2">
 <h2>Removing the Seasonal Flu Columns</h2>
-<pre><code>##   respondent_id h1n1_concern h1n1_knowledge behavioral_antiviral_meds
-## 1             0            1              0                         0
-## 2             1            3              2                         0
-## 3             2            1              1                         0
-## 4             3            1              1                         0
-## 5             4            2              1                         0
-## 6             5            3              1                         0
-##   behavioral_avoidance behavioral_face_mask behavioral_wash_hands
-## 1                    0                    0                     0
-## 2                    1                    0                     1
-## 3                    1                    0                     0
-## 4                    1                    0                     1
-## 5                    1                    0                     1
-## 6                    1                    0                     1
-##   behavioral_large_gatherings behavioral_outside_home behavioral_touch_face
-## 1                           0                       1                     1
-## 2                           0                       1                     1
-## 3                           0                       0                     0
-## 4                           1                       0                     0
-## 5                           1                       0                     1
-## 6                           0                       0                     1
-##   doctor_recc_h1n1 chronic_med_condition child_under_6_months health_worker
-## 1                0                     0                    0             0
-## 2                0                     0                    0             0
-## 3               NA                     1                    0             0
-## 4                0                     1                    0             0
-## 5                0                     0                    0             0
-## 6                0                     0                    0             0
-##   health_insurance opinion_h1n1_vacc_effective opinion_h1n1_risk
-## 1                1                           3                 1
-## 2                1                           5                 4
-## 3               NA                           3                 1
-## 4               NA                           3                 3
-## 5               NA                           3                 3
-## 6               NA                           5                 2
-##   opinion_h1n1_sick_from_vacc     age_group        education  race    sex
-## 1                           2 55 - 64 Years       &lt; 12 Years White Female
-## 2                           4 35 - 44 Years         12 Years White   Male
-## 3                           1 18 - 34 Years College Graduate White   Male
-## 4                           5     65+ Years         12 Years White Female
-## 5                           2 45 - 54 Years     Some College White Female
-## 6                           1     65+ Years         12 Years White   Male
-##              income_poverty marital_status rent_or_own  employment_status
-## 1             Below Poverty    Not Married         Own Not in Labor Force
-## 2             Below Poverty    Not Married        Rent           Employed
-## 3 &lt;= $75,000, Above Poverty    Not Married         Own           Employed
-## 4             Below Poverty    Not Married        Rent Not in Labor Force
-## 5 &lt;= $75,000, Above Poverty        Married         Own           Employed
-## 6 &lt;= $75,000, Above Poverty        Married         Own           Employed
-##   hhs_geo_region               census_msa household_adults household_children
-## 1       oxchjgsf                  Non-MSA                0                  0
-## 2       bhuqouqj MSA, Not Principle  City                0                  0
-## 3       qufhixun MSA, Not Principle  City                2                  0
-## 4       lrircsnp      MSA, Principle City                0                  0
-## 5       qufhixun MSA, Not Principle  City                1                  0
-## 6       atmpeygn      MSA, Principle City                2                  3
-##   employment_industry employment_occupation h1n1_vaccine
-## 1                                                      0
-## 2            pxcmvdjn              xgwztkwe            0
-## 3            rucpziij              xtkaffoo            0
-## 4                                                      0
-## 5            wxleyezf              emcorrxb            0
-## 6            saaquncn              vlluhbov            0</code></pre>
 <p>Given the recent COVID-19 pandemic, our group chose to focus only on the vaccination for H1N1, which is also known as the Swine Flu. We believe that our findings will be interesting in regards to comparing it to COVID-19. Therefore, we removed the five columns that only dealt with the Seasonal Flu.</p>
 <p>H1N1 was still seen as a “new virus”, although it was a different strain of the seasonal flu. Similarly, the COVID-19 virus and pandemic is also new and relatively unknown. We should be able to draw some similarities between skepticism and opinions regarding vaccinations between the two viruses.</p>
 </div>
@@ -2416,10 +2353,9 @@ div.tocify {
 </tbody>
 </table>
 <p>The optimal SVM and Random Forest Models identified earlier were run ten different times, having removed the seed. These results will now be fed into the Wilcoxon Rank-Sum Test for significance.</p>
-<p>#Wilcoxon Rank-Sum Test</p>
-<p>We decided not to do a T-Test as originally planned, as we realized that we needed to have a <em>non-parametric test</em>. The Wilcoxon Rank Sum Test is best for this, as it acts as a non-parametric version of the Two-Sample T-Test. The test does not assume that the data has a known distribution, which works for our data as we would only be dealing with 10 data points each. Working well with a small sample size is another benefit of the Wilcoxon Rank-Sum Test, which is another reason we chose it. In addition, our program wouldn’t have ran more than 10 as a sample size, as we had space constraints.</p>
-<p>Results - After conducting the Wilcoxon Rank-Sum Test for the Tuned Radial SVM and Tuned Random Forest models, we noted some important results. Our statistical testing included a Z-value of -2.8031 and a <em>P-value of .00512</em>. Testing at a significance level of 0.05, this allowed us to confirm the rejection of our Null Hypothesis.</p>
-<p><em>The SVM Polynomial Kernel will not perform differently than the Random Forest Classifier Model with regards to its F1 Score.</em></p>
+<p>#Wilcoxon Rank-Sum Test We utilized a Wilcoxon Rank Sum Test as it is a non-parametric test that does not assume the sample has a known distribution, which works for our data as we would only be dealing with 10 data points each. This test is also robust to small sample size, which was critical as our sample size was only 10 due to the computational space and run-time our models took up. We were unable to run the SVM and Random Forest model more than 10 times as this maxed out our RAM and Project Time on R Studio Cloud. The main assumption of a Wilcoxon Rank Sum Test is having two indpendent samples, which was satisfied.</p>
+<p>Results: After conducting the Wilcoxon Rank-Sum Test for the Tuned Radial SVM (feature selected) and Tuned Random Forest (original data) models, we noted some important results. Our statistical testing included a <strong>Z-value of -2.8031</strong> and a <strong>P-value of .00512</strong>. Because our p-value was smaller than our significance level of 0.05, we reject the null hypothesis. The results are statistically significant at p&lt;0.05.</p>
+<p><strong>This means that the difference between the SVM model and the Random Forest model in regards to its F1 score is not due to chance alone.</strong></p>
 </div>
 <div id="value-and-future-work" class="section level1">
 <h1>Value and Future Work</h1>
