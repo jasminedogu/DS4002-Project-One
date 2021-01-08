@@ -1,0 +1,14 @@
+base
+knitr
+dplyr
+ggplot2
+plyr
+mlbench
+GGally
+mltools
+data.table
+lattice
+caret
+Matrix
+glmnet
+e1071
