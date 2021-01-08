@@ -889,7 +889,7 @@ plot(original_random_forest_optimized) #plot of the forest results
 ```
 
 
-
+# Summary of Random Forest Model Results 
 ```{r}
 
 Model_RF = c("Random Forest", "Tuned", "Random Forest", "Tuned Random Forest")
@@ -905,8 +905,27 @@ RF_results = data.frame( Model_RF, Dataset_RF, F1Score_RF, Kappa_RF, Specificity
 kable(RF_results)
 
 ```
-The Aggregated Random Forest Model Results are shown above. The best performing model in terms of F1 Score was the original polynomial kernel. We want to select the tuned random forest for further exploration and use, due to the decrasedd computing burden necessary. This is because the tuned model utilized 188 trees, as opposed to the 200 trees utilized in the original random forest model, which only performed slightly better (F1 Score 0.0015 better). 
-  
+The Aggregated Random Forest Model Results are shown above. The best performing model in terms of F1 Score was the original polynomial kernel. We want to select the tuned random forest for further exploration and use, due to the decrased computing burden necessary. This is because the tuned model utilized 188 trees, as opposed to the 200 trees utilized in the original random forest model, which only performed slightly better (F1 Score 0.0015 better). The tuned random forest, utilizing the original data, had an F1 Score of 0.8655. Noticeably, the feature reduced models performed relatively poorly. Tuning the feature reduced random forest had little to no effect across the board. 
+
+
+# Optimized SVM and Random Forest Model Sampling 
+
+```{r}
+
+`Model Type` = c("SVM F1 Scores", "Random Forest F1 Scores")
+
+svm_f1 = c(0.6768,	0.6746,	0.6672,	0.6771,	0.6780,	0.6893,	0.6683,	0.6724,	0.6712,	0.6764)
+rf_f1 =  c(0.8655,	0.8725,	0.8677,	0.8686,	0.8671,	0.8658,	0.8659,	0.8680,	0.8686,	0.8697)
+
+Comp_results = data.frame( svm_f1, rf_f1)
+
+kable(Comp_results,  col.names = `Model Type`)
+```
+The optimal SVM and Random Forest Models identified earlier were run ten different times, having removed the seed. These results will then be fed into the Wilcoxon Rank-Sum Test. 
+
+
+
+
 # Research and Model Limitations
 
 # Future Analysis
