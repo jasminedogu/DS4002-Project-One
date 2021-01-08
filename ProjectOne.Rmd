@@ -476,7 +476,7 @@ onehot_test <- combined_df[data_test, 29:58]
 
 ```
 
-We chose a 70/15/15 split for our analysis, due to a variety of beneficial factors. 70% training data allows for ample examples for our model to find the most accurate solutions during the testing phase. 70% allocates enough “practice” data, while still leaving ample data for use later. In addition, 15% of validation data allows us enough space to choose the best model without giving up more training data. Finally 15% of test data, in our opinion, is the perfect sweet spot to test our model to unseen data. This 15% of test data should be accurate after undergoing the training and validation sets.
+We chose a 70/30 split for our analysis, due to a variety of beneficial factors. 70% training data allows for ample examples for our model to find the most accurate solutions during the testing phase. 70% allocates enough “practice” data, while still leaving ample data for use later. In addition, 30% of test data, in our opinion, is the perfect sweet spot to test our model to unseen data.
 
 # SVM Model {.tabset}
 
@@ -508,7 +508,7 @@ library(caret)
 cm_original_poly <- confusionMatrix(original_test$h1n1_vaccine,y_pred_original, positive = "1")
 cm_original_poly
 ```
-The accuracy and sensitivity were good relative to the basis, at 0.7863 and 0.83766 respectively. Something to note here is that the model overwhelmingly predicted the negative class, at a rate of 0.99448. This will be certainly be reflected in the F1 Score. 
+The accuracy and sensitivity were good relative to the basis, at 0.78 and 0.81 respectively. Something to note here is that the model overwhelmingly predicted the negative class, at a rate of 0.99448. This will be certainly be reflected in the F1 Score. 
 
 ```{r}
 f1score_poly = 2*0.83766  *(129/(129+1235))/(0.83766   + (129/(1235+129)) )
@@ -610,8 +610,8 @@ library(e1071)
 set.seed(03092000)
 
 obj <- tune(svm, h1n1_vaccine~., data = onehot_test, 
-            ranges = list(gamma = 2^(-1:1), 
-                          cost = 2^(2:4)),
+            ranges = list(gamma = 10^(-2:3), 
+                          cost = 10^(-1:5)),
             tunecontrol = tune.control(sampling = "fix"))
 summary(obj)
 
@@ -662,15 +662,26 @@ cm_onehot_radial_tuned
 
 ```{r}
 f1score_radial_onehot = 2*0.8782 *(728/(636+728))/(0.8782  + (728/(636+728)) )
-f1score_radial_onehot
 
+f1score_radial_onehot
 ```
 The F1 Score improved to achieve an score of 0.664! In addition, the kappa value (useful in scenarios like ours with unbalanced data), also improved to 0.5927, up from the pre-tuned model which had a Kappa value of 0.4788.
 
 
 #Comparative Modeling Assessment - Support Vector Machine  
 ```{r}
-svm_results = 
+
+Model = c("Polynomial", "Radial", "Radial", "Tuned Radial")
+Dataset = c("Original", "Original", "Feature Reduced", "Feature Reduced")
+F1Score = c(0.1699, 0.5483, 0.5724, 0.6639)
+Kappa = c(0.1221, 0.4529, 0.4788, 0.5927)
+Specificity = c(0.7832, 0.8492, 0.8564, 0.8745)
+Sensitivity = c(0.8376, 0.7302, 0.7302, 0.8782)
+Accuracy = c(0.784, 0.8326, 0.8375, 0.875)
+
+svm_results = data.frame( Model, Dataset, F1Score, Kappa, Specificity, Sensitivity, Accuracy)
+
+kable(svm_results)
 
 
 

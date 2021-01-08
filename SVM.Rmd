@@ -4,25 +4,244 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+library(knitr)
+library(dplyr)
+library(ggplot2)
+library(plyr)
+library(mlbench)
+library(GGally)
+library(mltools)
+library(randomForest)
+library(data.table)
+library(caret)
+set.seed(03092000)
 ```
 
-## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+```{r}
+load("Data_Prep.RData")
 ```
 
-## Including Plots
 
-You can also embed plots, for example:
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+
+# SVM Model {.tabset}
+
+
+## Creating the First Model - Polynomial Kernel 
+```{r}
+#install.packages('e1071') 
+library(e1071) 
+set.seed(03092000)
+classifier_original <- svm(formula = h1n1_vaccine ~ ., 
+                 data = original_train, 
+                 type = 'C-classification',  #Default
+                 #can change degree 
+                 kernel = 'polynomial')  #The kernel used in training and predicting
+
+```
+## Predicting the Test Set Results with Model
+```{r}
+# Predicting the test set results 
+
+y_pred_original <- predict(classifier_original, newdata = original_test[-28]) 
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+## Creating Confusion Matrix
+```{r}
+# Making a Confusion Matrix 
+#install.packages("caret")
+library(caret)
+cm_original_poly <- confusionMatrix(original_test$h1n1_vaccine,y_pred_original, positive = "1")
+cm_original_poly
+```
+The accuracy and sensitivity were good relative to the basis, at 0.78 and 0.81 respectively. Something to note here is that the kappa value, which is useful in evaluating imbalanced data, is extremely low at 0.122. 
+
+```{r}
+f1score_poly = 2*0.83766  *(129/(129+1235))/(0.83766   + (129/(1235+129)) )
+f1score_poly
+```
+Our primary metric, the F1 Score, was calculated to be 0.1699 - this is awful. Let's try it with the radial kernel. 
+
+
+
+## Creating the Second Model - Radial Kernel 
+```{r}
+#install.packages('e1071') 
+library(e1071) 
+
+classifier_original2 <- svm(formula = h1n1_vaccine ~ ., 
+                 data = original_train, 
+                 type = 'C-classification',  #Default
+                 #can change degree 
+                 kernel = 'radial')  #The kernel used in training and predicting
+
+```
+## Predicting the Test Set Results with Model
+```{r}
+# Predicting the test set results 
+
+y_pred_original2 <- predict(classifier_original2, newdata = original_test[-28]) 
+```
+
+## Creating Confusion Matrix
+```{r}
+# Making a Confusion Matrix 
+#install.packages("caret")
+library(caret)
+cm_original_radial <- confusionMatrix(original_test$h1n1_vaccine,y_pred_original2, positive = "1")
+cm_original_radial
+```
+The overall accuracy improved some to 0.8326, while the false positive rate decreased from 0.2216 to 0.1546. While the model's predictive rate of the negative class decreased slightly, a 0.95 rate is still concerning. 
+
+
+```{r}
+f1score_radial = 2*0.7303*(306/(391+306))/(0.7303 + (306/(391+306)) )
+f1score_radial
+```
+However, our main metric, the *F1 Score*, is *0.5483*. This is a significant improvement from the the polynomial kernel!
+Let's try with the reduced features!
+
+# SVM Model w/ Feature Reduction
+
+
+## Creating the Model
+```{r}
+#install.packages('e1071') 
+library(e1071) 
+set.seed(03092000)
+
+classifier_onehot <- svm(formula = h1n1_vaccine ~ ., 
+                 data = onehot_train, 
+                 type = 'C-classification',  #Default
+                 #can change degree 
+                 kernel = 'radial')  #The kernel used in training and predicting
+
+```
+
+
+## Predicting the Test Set Results with Model
+```{r}
+# Predicting the test set results 
+#head(df)
+y_pred_onehot <- predict(classifier_onehot, newdata = onehot_test[-30]) 
+```
+
+
+## Creating Confusion Matrix
+```{r}
+# Making a Confusion Matrix 
+#install.packages("caret")
+library(caret)
+cm_onehot_radial <- confusionMatrix(as.factor(onehot_test$h1n1_vaccine),y_pred_onehot, positive = "1")
+cm_onehot_radial
+```
+
+
+Notably there are improvements in accuracy and sensitivity. The accuracy improved very slightly to 0.8375 while sensitivity increased slgihtly and the false positive rate decreased slightly (~.01)
+
+```{r}
+f1score_radial_onehot = 2* 0.7302 *(644/(644+720))/( 0.7302  + (644/(644+720)) )
+f1score_radial_onehot
+
+```
+With regard to our key metric, the *F1 Score* remained slgihtly increased from *0.5483* to *0.5734*. While much of the improvments may seem minute and trivial, the slight improvement of the model on the feature selected model is excellent news. As the model will be much less computationally expensive on the reduced feature space. This gives us hope that our new model will be a greater asset, as it is both leaner and meaner. 
+
+Now, we will approach the SVM hyperparameter tuning. 
+
+
+
+```{r}
+
+library(e1071)
+set.seed(03092000)
+
+obj <- tune(svm, h1n1_vaccine~., data = onehot_test, 
+            ranges = list(gamma = 10^(-9:2), 
+                          cost = 10^(-2:9)),
+            tunecontrol = tune.control(sampling = "fix"))
+summary(obj)
+
+```
+The indicated optimal performance hyperparameters are gamma = 0.5 and cost = 8.
+
+C is the parameter relating to the *cost of misclassification*. 
+    - As C increases, so does the variance. At the same time, the bias of the model is reduced. 
+    - A high value for C usually is used when you want to better classify the training data correctly instead of leaving room       for future data points. 
+  
+Because we want to increase the robustness of the model for unseen points, we will reduce the C value to 4.
+
+![Tuning Gamma and Cost](SVM_Optimization.jpg)
+As shown above, your selection of Gamma and Cost wil have a large impact on your model. The output states that an optimal gamma value of 0.5 and an optimal cost value of 8. We can observe how this selection is about to navigate the waters of Bias-Variance tradeoff, as our small gamma and our large C results in high variance & low bias. While our model is not tuned to most optimally fit the 
+
+
+
+
+```{r}
+
+plot(obj)
+```
+As can be see above, the optimal gamma is the strip near a gamma of 0.5 and the cost was 16!
+
+
+## Running the Tuned SVM - Radial Kernel  
+```{r}
+#install.packages('e1071') 
+library(e1071) 
+
+set.seed(03092000)
+classifier_onehot_tuned <- svm(formula = h1n1_vaccine ~ ., 
+                 data = onehot_train, 
+                 type = 'C-classification',  #Default
+                 #can change degree 
+                 kernel = 'radial',
+                 cost = 16,
+                 gamma = 0.5)  #The kernel used in training and predicting
+
+```
+
+
+## Predicting the Test Set Results with Model
+```{r}
+# Predicting the test set results 
+
+y_pred_onehot_tuned <- predict(classifier_onehot_tuned, newdata = onehot_test[-30]) 
+```
+
+## Creating Confusion Matrix
+```{r}
+# Making a Confusion Matrix 
+#install.packages("caret")
+library(caret)
+cm_onehot_radial_tuned <- confusionMatrix(as.factor(onehot_test$h1n1_vaccine),y_pred_onehot_tuned, positive = "1")
+cm_onehot_radial_tuned
+```
+
+
+```{r}
+f1score_radial_onehot = 2*0.8782 *(728/(636+728))/(0.8782  + (728/(636+728)) )
+
+f1score_radial_onehot
+```
+The F1 Score improved to achieve an score of 0.664! In addition, the kappa value (useful in scenarios like ours with unbalanced data), also improved to 0.5927, up from the pre-tuned model which had a Kappa value of 0.4788.
+
+
+#Comparative Modeling Assessment - Support Vector Machine  
+```{r}
+
+Model = c("Polynomial", "Radial", "Radial", "Tuned Radial")
+Dataset = c("Original", "Original", "Feature Reduced", "Feature Reduced")
+F1Score = c(0.1699, 0.5483, 0.5724, 0.6639)
+Kappa = c(0.1221, 0.4529, 0.4788, 0.5927)
+Specificity = c(0.7832, 0.8492, 0.8564, 0.8745)
+Sensitivity = c(0.8376, 0.7302, 0.7302, 0.8782)
+Accuracy = c(0.784, 0.8326, 0.8375, 0.875)
+
+svm_results = data.frame( Model, Dataset, F1Score, Kappa, Specificity, Sensitivity, Accuracy)
+
+kable(svm_results)
+
+
+
+```
