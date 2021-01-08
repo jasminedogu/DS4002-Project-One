@@ -76,8 +76,8 @@ Before getting into the details of why the SVM and Random Forest models were sel
 
 ## Reading in the Dataset
 ```{r, include=FALSE}
-df_features <- read.csv("datasets/training_set_features.csv")
-df_label <- read.csv("datasets/training_set_labels.csv")
+df_features <- read.csv("Datasets/training_set_features.csv")
+df_label <- read.csv("Datasets/training_set_labels.csv")
 df <- merge(df_features,df_label,by="respondent_id")
 #head(df)
 #sum(nrow(df))
@@ -123,7 +123,7 @@ Lastly, we removed the respondent_id at this step. This variable was important w
 df <- df[, -which(names(df) %in% c("employment_occupation","health_insurance","employment_industry", "hhs_geo_region", "respondent_id"))]
 df<- na.omit(df)
 #write.csv(df,"df2.csv", row.names = TRUE) #saving to a new csv file
-df2<- read.csv("datasets/df2.csv")  
+df2<- read.csv("Datasets/df2.csv")  
 nrow(df)
 ```
 Here, along with removing the top 3 columns with the highest number of NA's, we also removed the hhs_geo_region variable for reasons mentioned above. We are left with 19,656 observations. Because this is still a significant portion of the original number of observations the dataset had (approximately 73.6%), we proceed with our analysis.
